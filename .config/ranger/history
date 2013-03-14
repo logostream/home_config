@@ -1,0 +1,50 @@
+cd ~
+cd /media/sdb1/##payload##
+cd /media/sdb1
+shell 
+cd /media/sdb
+open_with 
+mkdir tmp
+delete seriously? 
+search misc
+find \
+search cache
+rename 马尼拉大帆船_百度百科.maff
+mkdir goagent
+execute_file 
+cd /home/stream/iWork/Build/
+rename goagent~
+rename goagent
+set colorscheme
+set show_hidden=True
+search 
+cd iWork/Python/
+search python
+mkdir python
+search gpe
+mkdir getting_started
+
+cd /mount/sdb5
+cd /media/sdb5
+delete seriously? y
+compress more.zip
+mkdir report
+extracthere 
+search workon-X
+rename
+rename BH4001206189_a.html
+rename BH4001206189_b.html
+rename BH4001206189_c.html
+rename BH4001206189_d.html
+rename BH4001206189_e.html
+search interview
+search resu
+search inter
+qa
+search ma
+compress config.tar.gz
+search goa\
+delete
+mkdir Daily
+rename daily
+q

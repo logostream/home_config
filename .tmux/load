@@ -1,0 +1,3 @@
+#!/bin/bash
+SESSION=$1
+tmux source-file ~/.tmux/$1.conf
