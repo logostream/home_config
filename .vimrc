@@ -4,6 +4,8 @@ set hlsearch
 filetype on
 syntax on
 set mouse=a
+"set backspace=2 " make backspace work like most other apps
+"set ttymouse=xterm2
 " Color Schemes
 if $TERM == 'linux'
     " Virtual Console
@@ -19,6 +21,7 @@ hi Pmenu guibg=DarkMagenta
 set list listchars=tab:│\ ,trail:·,extends:>,eol:¬
 set tabstop=4
 set shiftwidth=4 " for cindent
+"set expandtab
 set autoindent
 set cindent
 set number
@@ -67,9 +70,11 @@ nnoremap <Leader>t8 :tabn8<CR>
 nnoremap <Leader>t9 :tabn9<CR>
 nnoremap <Leader>y "+y
 vnoremap <Leader>y "+y
+nnoremap <Leader>p "+p
+vnoremap <Leader>p "+p
 " <Leader>fx -- all unmatched result will be folded out
 " nnoremap <Leader>fx :set foldmethod=expr\| set foldexpr=join(getline(max([0,v:lnum-5]),v:lnum))!~@/<CR>
-com -nargs=1 FoldFilter :/<args>/|set foldmethod=expr|set foldexpr=join(getline(max([0,v:lnum-5]),v:lnum))!~'<args>'
+com -nargs=1 FoldFilter :/<args>/|set foldmethod=expr|set foldexpr=join(getline(max([0,v:lnum-5]),v:lnum+5))!~'<args>'
 nnoremap <Leader>fi :set foldmethod=indent<CR>
 nnoremap <Leader>b :!echo 'backup as %~'; cp '%' '%~'; ls -l '%'*<CR>
 " use <Tab> as <Esc> short cut
