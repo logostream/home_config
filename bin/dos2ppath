@@ -1,0 +1,2 @@
+#!/usr/bin/bash
+sed -e 's_^\([a-z]\):_/cygdrive/\L\1_gI' -e 's_\\_/_g'

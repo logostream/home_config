@@ -1,0 +1,2 @@
+#!/usr/bin/bash
+ppath2dos > /dev/clipboard
