@@ -1,0 +1,5 @@
+# list the git url of plugins
+{github}:
+	{vim-powerline}: https://github.com/Lokaltog/vim-powerline.git
+	{gundo.vim}: https://github.com/sjl/gundo.vim.git # need python support, install a package provide vim-python e.g. vim-gtk
+	{nerdtree}: https://github.com/scrooloose/nerdtree.git
