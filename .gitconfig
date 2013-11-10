@@ -8,3 +8,6 @@
 	diff = auto
 	branch = auto
 	interactive = auto
+[remote "redland"]
+	url = ssh://stream@redland.cloudapp.net:1109/~/cache/github/notes
+	fetch = +refs/heads/*:refs/remotes/redland/*
