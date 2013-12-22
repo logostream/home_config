@@ -20,5 +20,6 @@ def maffurl (maffpath):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        sys.stderr.write("Usage: %s ${maff_path}\n", sys.argv[0]);
-    maffurl(sys.argv[1]);
+        sys.stderr.write("Usage: %s ${maff_path}\n" % sys.argv[0]);
+    else:
+        maffurl(sys.argv[1]);

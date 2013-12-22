@@ -15,6 +15,7 @@ def mhturl (mhtpath):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        sys.stderr.write("Usage: %s ${mht_path}\n", sys.argv[0]);
-    mhturl(sys.argv[1]);
+        sys.stderr.write("Usage: %s ${mht_path}\n" % sys.argv[0]);
+    else:
+        mhturl(sys.argv[1]);
 
