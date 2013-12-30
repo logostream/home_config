@@ -1,0 +1,26 @@
+--- clang_complete.py	2013-12-30 20:12:12.060791094 +0800
++++ clang_complete.py~	2013-12-30 20:12:07.968790999 +0800
+@@ -2,8 +2,8 @@
+ import vim
+ 
+ def snippetsInit():
+-  vim.command("noremap <silent> <buffer> <space> :python updateSnips()<CR>")
+-  vim.command("snoremap <silent> <buffer> <space> <ESC>:python updateSnips()<CR>")
++  vim.command("noremap <silent> <buffer> <tab> :python updateSnips()<CR>")
++  vim.command("snoremap <silent> <buffer> <tab> <ESC>:python updateSnips()<CR>")
+   if int(vim.eval("g:clang_conceal_snippets")) == 1:
+     vim.command("syntax match placeHolder /\$`[^`]*`/ contains=placeHolderMark")
+     vim.command("syntax match placeHolderMark contained /\$`/ conceal")
+--- clang_complete.py~	2013-12-30 20:12:07.968790999 +0800
++++ clang_complete.py	2013-12-30 20:12:12.060791094 +0800
+@@ -2,8 +2,8 @@
+ import vim
+ 
+ def snippetsInit():
+-  vim.command("noremap <silent> <buffer> <tab> :python updateSnips()<CR>")
+-  vim.command("snoremap <silent> <buffer> <tab> <ESC>:python updateSnips()<CR>")
++  vim.command("noremap <silent> <buffer> <space> :python updateSnips()<CR>")
++  vim.command("snoremap <silent> <buffer> <space> <ESC>:python updateSnips()<CR>")
+   if int(vim.eval("g:clang_conceal_snippets")) == 1:
+     vim.command("syntax match placeHolder /\$`[^`]*`/ contains=placeHolderMark")
+     vim.command("syntax match placeHolderMark contained /\$`/ conceal")

@@ -95,4 +95,5 @@ set cinkeys-=0#
 set indentkeys=-0#
 
 " configures for plugins
-source $HOME/.vim/configs/neocomplcache.vim
+"source $HOME/.vim/configs/neocomplcache.vim
+source $HOME/.vim/configs/clang_complete.vim
