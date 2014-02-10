@@ -31,6 +31,9 @@ set smartcase
 set virtualedit=onemore
 " Always display statusline
 set laststatus=2
+" Highlight current line
+set cursorline
+"set cursorcolumn
 "let g:Powerline_symbols = 'fancy'
 "let g:Powerline_theme = 'solarized256'
 let g:NERDTreeHijackNetrw = 0
