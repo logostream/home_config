@@ -8,3 +8,4 @@ alias ifconfig='/sbin/ifconfig'
 alias man='TERM=xterm man' # fix highlight issue in tmux
 # command for start agent of copy.com as deamon
 alias copydemon='nohup ~/bin/copy/x86_64/CopyConsole -debug -daemon > ~/log/copy.log &'
+alias unzip-gbk='unzip -O CP936'
