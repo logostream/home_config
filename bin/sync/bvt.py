@@ -100,16 +100,135 @@ def entryfile_update_test(logonly):
 	_common.dump_entryfile();
 	return rawlog;
 
+def cache_status_test(logonly):
+	cache_path_cases = {
+		'clean.log': {
+			'status': _common.STATEFLAG_CLEAN,
+			'ancestor': 'clean.log',
+		},
+		'clean.d': {
+			'status': _common.STATEFLAG_CLEAN,
+			'ancestor': 'clean.d',
+		},
+		'conflict.log': {
+			'status': _common.STATEFLAG_CONFLICT,
+			'ancestor': 'conflict.log',
+		},
+		'conflict.d': {
+			'status': _common.STATEFLAG_CONFLICT,
+			'ancestor': 'conflict.d',
+		},
+		'renamed.log': {
+			'status': _common.STATEFLAG_RENAMED,
+			'ancestor': 'renamed.log',
+		},
+		'renamed.d': {
+			'status': _common.STATEFLAG_RENAMED,
+			'ancestor': 'renamed.d',
+		},
+		'miss.log': {
+			'status': _common.STATEFLAG_MISS,
+			'ancestor': None,
+		},
+		'delay.log': {
+			'status': _common.STATEFLAG_DELAY,
+			'ancestor': 'delay.log',
+		},
+		'delay.d': {
+			'status': _common.STATEFLAG_DELAY,
+			'ancestor': 'delay.d',
+		},
+		'ready.log': {
+			'status': _common.STATEFLAG_READY,
+			'ancestor': 'ready.log',
+		},
+		'ready.d': {
+			'status': _common.STATEFLAG_READY,
+			'ancestor': 'ready.d',
+		},
+		'untracted.log': {
+			'status': _common.STATEFLAG_UNTRACTED,
+			'ancestor': None,
+		},
+		'untracted.d': {
+			'status': _common.STATEFLAG_UNTRACTED,
+			'ancestor': None,
+		},
+
+		'clean.d/miss.log': {
+			'status': _common.STATEFLAG_CLEAN | _common.STATEFLAG_MISS | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'clean.d',
+		},
+		'clean.d/partial.log': {
+			'status': _common.STATEFLAG_CLEAN | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'clean.d',
+		},
+
+		'conflict.d/miss.log': {
+			'status': _common.STATEFLAG_CONFLICT | _common.STATEFLAG_MISS | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'conflict.d',
+		},
+		'conflict.d/partial.log': {
+			'status': _common.STATEFLAG_CONFLICT | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'conflict.d',
+		},
+		'conflict.d/hit.log': {
+			'status': _common.STATEFLAG_CONFLICT,
+			'ancestor': 'conflict.d',
+		},
+
+		'renamed.d/miss.log': {
+			'status': _common.STATEFLAG_RENAMED | _common.STATEFLAG_MISS | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'renamed.d',
+		},
+		'renamed.d/partial.log': {
+			'status': _common.STATEFLAG_RENAMED | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'renamed.d',
+		},
+
+		'delay.d/miss.log': {
+			'status': _common.STATEFLAG_DELAY | _common.STATEFLAG_MISS | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'delay.d',
+		},
+		'delay.d/partial.log': {
+			'status': _common.STATEFLAG_DELAY | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'delay.d',
+		},
+
+		'ready.d/miss.log': {
+			'status': _common.STATEFLAG_READY | _common.STATEFLAG_MISS | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'ready.d',
+		},
+		'ready.d/partial.log': {
+			'status': _common.STATEFLAG_READY | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'ready.d',
+		},
+
+		'': {
+			'status': _common.STATEFLAG_NULL,
+			'ancestor': None,
+		},
+	};
+
+	for path, expected in cache_path_cases.iteritems():
+		cache_path = _path.join(_common.REPO_CACHE_PATH, path);
+		status, ancestor = _cache.status_check(cache_path);
+		assert status == expected['status'];
+		assert ancestor == None if expected['ancestor'] is None else _path.join(_common.REPO_CACHE_PATH, expected['ancestor']);
+	return [];
+
 if __name__ == '__main__':
 	push_pathenv();
-	run_test('agg_basic', agg_test, basic_verify, logonly=False);
-	run_test('restore_miss_basic', restore_miss_test, basic_verify, logonly=False);
-	run_test('agg_over_cache', agg_test, basic_verify, logonly=False);
-	run_test('agg_over_conflict', agg_test, basic_verify, logonly=False);
-	run_test('commit_basic', commit_test, basic_verify, logonly=False);
-	run_test('commit_rename_basic', commit_test, basic_verify, logonly=False);
-	run_test('entryfile_sync_basic', entryfile_sync_test, basic_verify, logonly=False);
-	run_test('entryfile_update_basic', entryfile_update_test, basic_verify, logonly=False);
-	run_test('commit_rename_gitmap', commit_test, basic_verify, logonly=False); # test gitmap.log only
+	logonly = False;
+	run_test('agg_basic', agg_test, basic_verify, logonly=logonly);
+	run_test('restore_miss_basic', restore_miss_test, basic_verify, logonly=logonly);
+	run_test('agg_over_cache', agg_test, basic_verify, logonly=logonly);
+	run_test('agg_over_conflict', agg_test, basic_verify, logonly=logonly);
+	run_test('commit_basic', commit_test, basic_verify, logonly=logonly);
+	run_test('commit_rename_basic', commit_test, basic_verify, logonly=logonly);
+	run_test('entryfile_sync_basic', entryfile_sync_test, basic_verify, logonly=logonly);
+	run_test('entryfile_update_basic', entryfile_update_test, basic_verify, logonly=logonly);
+	run_test('commit_rename_gitmap', commit_test, basic_verify, logonly=logonly); # test gitmap.log only
+	run_test('cache_status', cache_status_test, basic_verify, logonly=logonly);
 	pop_pathenv();
 

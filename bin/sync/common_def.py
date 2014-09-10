@@ -473,8 +473,9 @@ def gitmap_check():
 	for git_path in g_gitmap_fd:
 		data_path = g_gitmap_fd[git_path];
 		assert g_gitmap_bd[data_path] == git_path;
-		assert _path.isfile(git_path) and not _path.islink(git_path);
-		assert _path.isfile(data_path) and not _path.islink(data_path);
+		assert _path.exists(git_path) and not _path.islink(git_path);
+		assert _path.exists(data_path) and not _path.islink(data_path);
+		assert _path.isfile(git_path) == _path.isfile(data_path);
 	for git_path in g_gitmap_fd:
 		git_path = g_gitmap_bd[data_path];
 		assert g_gitmap_fd[git_path] == data_path;
@@ -536,6 +537,9 @@ def gitmap_remap(rename_map):
 	g_gitmap_fd = gitmap_fd;
 	g_gitmap_bd = gitmap_bd;
 	return;
+
+def get_iter_gitmap(): # (git_path, data_path)
+	return g_gitmap_fd.iteritems();
 
 g_entryptn = re.compile(r'^{(.*)}\:'); # '{$path}:'
 g_entry_labelptn = re.compile(r'^\t@(\w+)(: .*|\(.*\))?');
@@ -674,7 +678,7 @@ def commonpath_set(root_path):
 	REPO_BASE_PATH      = root_path;
 	REPO_CACHE_PATH     = _path.join(REPO_BASE_PATH, 'cache/docs');
 	REPO_AGGSRC_PATH    = _path.join(REPO_BASE_PATH, 'Copy');
-	REPO_GIT_PATH       = _path.join(REPO_BASE_PATH, 'cache/github');
+	REPO_GIT_PATH       = _path.join(REPO_BASE_PATH, 'github');
 	REPO_GITMAP_PATH    = _path.join(REPO_BASE_PATH, 'cache/gitmap.log');
 	REPO_DATA_PATH      = _path.join(REPO_BASE_PATH, 'data/docs');
 	REPO_ARCH_PATH      = _path.join(REPO_BASE_PATH, 'arch');

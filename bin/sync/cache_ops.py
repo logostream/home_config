@@ -372,12 +372,12 @@ def commit_update(root_path, logonly=True):
 	rawlog = [];
 	assert _common.isancestor(_common.REPO_CACHE_PATH, root_path);
 
-	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'commit_update', {
+	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'cache_commit_update', {
 					'step' : 'malassociate_scan_check',
 					'root_path' : root_path,
 				}));
 	malassociate_list = malassociate_scan_check(root_path, _common.REPO_DATA_PATH);
-	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'commit_update', {
+	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'cache_commit_update', {
 					'step' : 'malconflict_scan_check',
 					'root_path' : root_path,
 				}));
@@ -394,7 +394,7 @@ def commit_update(root_path, logonly=True):
 						}));
 		return rawlog;
 
-	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'commit_update', {
+	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'cache_commit_update', {
 					'step' : 'commit_scan_check',
 					'root_path' : root_path,
 				}));
@@ -413,7 +413,7 @@ def commit_update(root_path, logonly=True):
 						'dest' : dest,
 					}));
 	
-	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'commit_update', {
+	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'cache_commit_update', {
 					'step' : 'merge ops',
 					'root_path' : root_path,
 				}));
@@ -461,12 +461,12 @@ def commit_update(root_path, logonly=True):
 					assert False;
 				mv_batch_ops[key] = op;
 				if len(set([src for src, dest in mv_batch_ops])) != len(mv_batch_ops):
-					rawlog.append(_common.LogEntry(_common.LOGLEVEL_ERR, 'commit_update', {
+					rawlog.append(_common.LogEntry(_common.LOGLEVEL_ERR, 'cache_commit_update', {
 									'err_desc' : 'mv confliction: multiple ops have same src',
 								}));
 					return rawlog;
 				if len(set([dest for src, dest in mv_batch_ops])) != len(mv_batch_ops):
-					rawlog.append(_common.LogEntry(_common.LOGLEVEL_ERR, 'commit_update', {
+					rawlog.append(_common.LogEntry(_common.LOGLEVEL_ERR, 'cache_commit_update', {
 									'err_desc' : 'mv confliction: multiple ops have same dest',
 								}));
 					return rawlog;
@@ -490,7 +490,7 @@ def commit_update(root_path, logonly=True):
 				path, origin_tag = op.keywords['path'], op.keywords['origin_tag'];
 				key = path;
 				if key in untag_ops:
-					rawlog.append(_common.LogEntry(_common.LOGLEVEL_WARN, 'commit_update', {
+					rawlog.append(_common.LogEntry(_common.LOGLEVEL_WARN, 'cache_commit_update', {
 									'warn_desc' : 'duplicated untag',
 									'path' : path,
 									'origin_tag' : origin_tag,
@@ -506,7 +506,7 @@ def commit_update(root_path, logonly=True):
 				key = link_path = op.keywords['link_path'];
 				assert _common.isancestor(_common.REPO_CACHE_PATH, link_path);
 				if key in rmlink_ops:
-					rawlog.append(_common.LogEntry(_common.LOGLEVEL_WARN, 'commit_update', {
+					rawlog.append(_common.LogEntry(_common.LOGLEVEL_WARN, 'cache_commit_update', {
 									'warn_desc' : 'duplicated rmlink',
 									'link_path' : link_path,
 								}));
@@ -522,7 +522,7 @@ def commit_update(root_path, logonly=True):
 				assert _common.isancestor(_common.REPO_CACHE_PATH, dest);
 				key = dest;
 				if key in restorelink_ops:
-					rawlog.append(_common.LogEntry(_common.LOGLEVEL_WARN, 'commit_update', {
+					rawlog.append(_common.LogEntry(_common.LOGLEVEL_WARN, 'cache_commit_update', {
 									'warn_desc' : 'duplicated entry to restorelink',
 									'src' : src,
 									'dest' : dest,
@@ -532,15 +532,12 @@ def commit_update(root_path, logonly=True):
 	if not logonly:
 		_common.incfile_init();
 
-	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'commit_update', {
+	# execute ops
+	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'cache_commit_update', {
 					'step' : 'execute ops',
 					'root_path' : root_path,
 				}));
-	# wish: remove repeated code
-	for op in rmlink_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
+
 	rawlog.extend(_common.mv_init_op(logonly=logonly));
 	if rawlog[-1].level == _common.LOGLEVEL_ERR:
 		return rawlog;
@@ -551,30 +548,19 @@ def commit_update(root_path, logonly=True):
 	rawlog.extend(_common.mv_commit_op(logonly=logonly));
 	if rawlog[-1].level == _common.LOGLEVEL_ERR:
 		return rawlog;
-	for op in addfile_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
-	for op in override_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
-	for op in untag_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
-	for op in tagfile_ops.values():
-		rawlog.extend(op(logonly=logonly));
-	for op in rmfile_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
-	for op in restorelink_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
 
-	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'commit_update', {
+	for ops in [
+					rmlink_ops, addfile_ops, override_ops,
+					untag_ops, tagfile_ops,
+					rmfile_ops, restorelink_ops,
+				]:
+		for op in ops.values():
+			rawlog.extend(op(logonly=logonly));
+			if rawlog[-1].level == _common.LOGLEVEL_ERR:
+				return rawlog;
+
+	# post check
+	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'cache_commit_update', {
 					'step' : 'post check',
 					'root_path' : root_path,
 				}));

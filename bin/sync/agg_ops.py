@@ -369,26 +369,14 @@ def aggregate_update(root_path, logonly=True):
 					'step' : 'execute ops',
 					'root_path' : root_path,
 				}));
-	for op in rmlink_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
-	for op in addfile_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
-	for op in override_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
-	for op in tagfile_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
-	for op in rmfile_ops.values():
-		rawlog.extend(op(logonly=logonly));
-		if rawlog[-1].level == _common.LOGLEVEL_ERR:
-			return rawlog;
+	for ops in [
+					rmlink_ops, addfile_ops, override_ops,
+					tagfile_ops, rmfile_ops,
+				]:
+		for op in ops.values():
+			rawlog.extend(op(logonly=logonly));
+			if rawlog[-1].level == _common.LOGLEVEL_ERR:
+				return rawlog;
 
 	rawlog.append(_common.LogEntry(_common.LOGLEVEL_INFO, 'aggregate_update', {
 					'step' : 'post check',

@@ -100,3 +100,5 @@ set indentkeys=-0#
 " configures for plugins
 "source $HOME/.vim/configs/neocomplcache.vim
 source $HOME/.vim/configs/clang_complete.vim
+" for plugin powerline
+"set rtp+=~/.vim/bundle/powerline/powerline/bindings/vim

@@ -111,9 +111,31 @@ def entryfile_sync_update(args):
 	logonly = args.logonly;
 	_common.commonpath_set(root);
 
+	_common.loadtags();
 	_common.load_entryfile();
 	_data.entryfile_sync(_common.REPO_DATA_PATH);
 	_common.dump_entryfile();
+	return;
+
+def git_commit_update(args):
+	root = '/home/stream';
+	if args.root:
+		assert len(args.root) == 1;
+		root = _path.abspath(args.root[0]);
+	assert _path.exists(root);
+	logonly = args.logonly;
+	_common.commonpath_set(root);
+
+	_common.LogEntry.open_realtime_log();
+	_common.gitmap_load();
+	_common.gitmap_check();
+	rawlog = _git.commit_update(_common.REPO_GIT_PATH, logonly=logonly);
+	if not logonly:
+		_git.gitmap_update(rawlog);
+	_common.LogEntry.close_realtime_log();
+
+	for logentry in rawlog:
+		assert logentry.level != _common.LOGLEVEL_ERR;
 	return;
 
 if __name__ == '__main__':
@@ -131,9 +153,9 @@ if __name__ == '__main__':
 	parser_agg = subparsers.add_parser('agg', help='aggregate from copy to cache');
 	parser_agg.set_defaults(action='agg');
 
-	# commit
-	parser_commit = subparsers.add_parser('commit', help='commit from cache to data');
-	parser_commit.set_defaults(action='commit');
+	# cache-commit
+	parser_cache_commit = subparsers.add_parser('cache-commit', help='commit from cache to data');
+	parser_cache_commit.set_defaults(action='cache-commit');
 
 	# restore
 	parser_restore = subparsers.add_parser('restore', help='restore miss from cache to cache');
@@ -143,12 +165,17 @@ if __name__ == '__main__':
 	parser_restore = subparsers.add_parser('entryfile', help='sync entryfiles');
 	parser_restore.set_defaults(action='entryfile');
 
+	# git-commit
+	parser_git_commit = subparsers.add_parser('git-commit', help='commit from git to data');
+	parser_git_commit.set_defaults(action='git-commit');
+
 	args = parser.parse_args();
 	{
 		'status': cachefile_status_query,
 		'agg': aggregate_update,
-		'commit': cache_commit_update,
+		'cache-commit': cache_commit_update,
 		'restore': cache_restore_miss_update,
 		'entryfile': entryfile_sync_update,
+		'git-commit': git_commit_update,
 	}[args.action](args);
 	pass;
