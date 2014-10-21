@@ -9,8 +9,8 @@
 	branch = auto
 	interactive = auto
 [remote "foo.notes"]
-	url = ssh://foo/github/notes.git
+	url = ssh://foo/~/github/notes.git
 	fetch = +refs/heads/*:refs/remotes/foo/*
 [remote "foo.home_config"]
-	url = ssh://foo/github/home_config.git
+	url = ssh://foo/~/github/home_config.git
 	fetch = +refs/heads/*:refs/remotes/foo/*
