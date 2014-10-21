@@ -8,9 +8,9 @@
 	diff = auto
 	branch = auto
 	interactive = auto
-[remote "redland.notes"]
-	url = ssh://stream@redland.cloudapp.net:1109/~/cache/github/notes.git
-	fetch = +refs/heads/*:refs/remotes/redland/*
-[remote "redland.home_config"]
-	url = ssh://stream@redland.cloudapp.net:1109/~/cache/github/home_config.git
-	fetch = +refs/heads/*:refs/remotes/redland/*
+[remote "foo.notes"]
+	url = ssh://foo/github/notes.git
+	fetch = +refs/heads/*:refs/remotes/foo/*
+[remote "foo.home_config"]
+	url = ssh://foo/github/home_config.git
+	fetch = +refs/heads/*:refs/remotes/foo/*
