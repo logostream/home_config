@@ -1,0 +1,22 @@
+--- client.conf~	2014-10-25 16:08:28.000000000 -0700
++++ /usr/local/etc/openvpn/client.conf	2014-10-25 16:12:58.000000000 -0700
+@@ -39,7 +39,7 @@
+ # The hostname/IP and port of the server.
+ # You can have multiple remote entries
+ # to load balance between the servers.
+-remote my-server-1 1194
++remote 107.178.217.115 1194
+ ;remote my-server-2 1194
+ 
+ # Choose a random host from the remote
+@@ -86,8 +86,8 @@
+ # for each client.  A single ca
+ # file can be used for all clients.
+ ca ca.crt
+-cert client.crt
+-key client.key
++cert client_mac.crt
++key client_mac.key
+ 
+ # Verify server certificate by checking
+ # that the certicate has the nsCertType

@@ -1,0 +1,55 @@
+--- /usr/share/doc/squid/examples/squid.conf	2012-02-04 16:38:48.000000000 +0000
++++ /etc/squid/squid.conf	2014-10-19 01:18:11.162422670 +0000
+@@ -284,10 +284,10 @@
+ #auth_param digest nonce_garbage_interval 5 minutes
+ #auth_param digest nonce_max_duration 30 minutes
+ #auth_param digest nonce_max_count 50
+-#auth_param basic program <uncomment and complete this line>
+-#auth_param basic children 5
+-#auth_param basic realm Squid proxy-caching web server
+-#auth_param basic credentialsttl 2 hours
++auth_param basic program /usr/lib/squid/pam_auth
++auth_param basic children 5
++auth_param basic realm Squid proxy-caching web server
++auth_param basic credentialsttl 2 hours
+ #auth_param basic casesensitive off
+ 
+ #  TAG: authenticate_cache_garbage_interval
+@@ -593,7 +593,7 @@
+ #Examples:
+ #acl macaddress arp 09:00:2b:23:45:67
+ #acl myexample dst_as 1241
+-#acl password proxy_auth REQUIRED
++acl password proxy_auth REQUIRED
+ #acl fileupload req_mime_type -i ^multipart/form-data$
+ #acl javascript rep_mime_type -i ^application/x-javascript$
+ #
+@@ -675,9 +675,10 @@
+ # from where browsing should be allowed
+ #http_access allow localnet
+ http_access allow localhost
++http_access allow password
+ 
+ # And finally deny all other access to this proxy
+-http_access deny all
++# http_access deny all
+ 
+ #  TAG: http_access2
+ #	Allowing or Denying access based on defined access lists
+@@ -1735,7 +1736,7 @@
+ #	objects.
+ #
+ #Default:
+-# cache_mem 8 MB
++cache_mem 8 MB
+ 
+ #  TAG: maximum_object_size_in_memory	(bytes)
+ #	Objects greater than this size will not be attempted to kept in
+@@ -4567,6 +4568,7 @@
+ #
+ #Default:
+ # none
++dns_nameservers 8.8.8.8 8.8.4.4
+ 
+ #  TAG: hosts_file
+ #	Location of the host-local IP name-address associations

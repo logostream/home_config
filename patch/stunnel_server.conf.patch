@@ -1,0 +1,33 @@
+--- /usr/share/doc/stunnel4/examples/stunnel.conf-sample	2013-04-22 19:46:08.000000000 +0000
++++ /etc/stunnel/stunnel.conf	2014-10-19 00:55:30.662422004 +0000
+@@ -10,10 +10,10 @@
+ ; A copy of some devices and system files is needed within the chroot jail
+ ; Chroot conflicts with configuration file reload and many other features
+ ; Remember also to update the logrotate configuration.
+-;chroot = /var/lib/stunnel4/
++chroot = /var/run/stunnel4/
+ ; Chroot jail can be escaped if setuid option is not used
+-;setuid = stunnel4
+-;setgid = stunnel4
++setuid = stunnel4
++setgid = stunnel4
+ 
+ ; PID is created inside the chroot jail
+ pid = /stunnel4.pid
+@@ -27,7 +27,7 @@
+ ; **************************************************************************
+ 
+ ; Certificate/key is needed in server mode and optional in client mode
+-cert = /etc/stunnel/mail.pem
++cert = /etc/stunnel/squid.pem
+ ;key = /etc/stunnel/mail.pem
+ 
+ ; Authentication stuff needs to be configured to prevent MITM attacks
+@@ -99,3 +99,7 @@
+ ;TIMEOUTclose = 0
+ 
+ ; vim:ft=dosini
++
++[squid]
++accept=8000
++connect=127.0.0.1:3128

@@ -1,0 +1,21 @@
+--- /etc/openvpn/server.conf~	2014-10-26 00:24:22.778461386 +0000
++++ /etc/openvpn/server.conf	2014-10-26 00:17:56.666463750 +0000
+@@ -76,8 +76,8 @@
+ # OpenVPN can also use a PKCS #12 formatted key file
+ # (see "pkcs12" directive in man page).
+ ca ca.crt
+-cert server.crt
+-key server.key  # This file should be kept secret
++cert server_foo.crt
++key server_foo.key  # This file should be kept secret
+ 
+ # Diffie hellman parameters.
+ # Generate your own with:
+@@ -135,6 +135,7 @@
+ # back to the OpenVPN server.
+ ;push "route 192.168.10.0 255.255.255.0"
+ ;push "route 192.168.20.0 255.255.255.0"
++push "route 10.8.0.0 255.255.0.0"
+ 
+ # To assign specific IP addresses to specific
+ # clients or if a connecting client has a private
