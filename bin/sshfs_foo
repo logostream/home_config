@@ -1,0 +1,4 @@
+#
+UMASK=000
+#UMASK=222
+sshfs -o follow_symlinks -o umask=$UMASK foo: /var/homedump

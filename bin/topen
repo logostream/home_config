@@ -1,0 +1,101 @@
+#!/usr/bin/python
+import argparse;
+import subprocess as _sp;
+import os.path as _path;
+import re;
+import os;
+import zipfile as _zip;
+import urllib;
+
+HASXWIN = True;
+CMD_XOPEN = 'open'; # use gnome-open for ubuntu
+REPO_HOME = '/var/homedump';
+DATA_HOME = _path.join(REPO_HOME, 'data');
+CACHE_HOME = _path.join(REPO_HOME, 'cache');
+CLASSIC_HOME = _path.join(REPO_HOME, 'arch/classic');
+THUMBNAIL_TMPFILE = '/tmp/topen_thumbnail.jpg';
+
+def maffurl (maffpath):
+	got = [];
+	with _zip.ZipFile(maffpath) as maffzip:
+		for filename in maffzip.namelist():
+			if re.match('^\w+/index.rdf$', filename) is None:
+				continue;
+			with maffzip.open(filename) as rdf:
+				for line in rdf:
+					match = re.search('<MAF:originalurl RDF:resource="(.*)"/>', line);
+					if not match is None:
+						got.append(match.group(1));
+	return got;
+
+def normalize(uri):
+	# support protocol:
+	# * repo://$path -> $CACHE_HOME/$path # todo fallback logic from DATA_HOME to CACHE_HOME
+	# * classic://$path -> $CLASSIC_HOME/$path
+	# whish list: pool://, wiki://, archwiki://
+	res = re.match('repo://(.*)', uri, re.I);
+	if res:
+		return _path.join(CACHE_HOME, urllib.unquote(res.group(1)));
+	res = re.match('classic://(.*)', uri, re.I);
+	if res:
+		return _path.join(CLASSIC_HOME, urllib.unquote(res.group(1)));
+	res = re.match('file://(/.*)', uri, re.I);
+	if res:
+		return urllib.unquote(res.group(1));
+	return uri;
+
+def tmux_open(uri, moretext):
+	if (uri.lower().startswith('http://')
+			or uri.lower().startswith('https://')
+			or uri.lower().endswith('.htm')
+			or uri.lower().endswith('.html')
+			):
+		_sp.Popen(['tmux', 'split-window', '-h', "w3m '%s'" % uri]);
+		return;
+	if not moretext and uri.lower().endswith('.pdf'):
+		# assert not _path.exists(THUMBNAIL_TMPFILE);
+		_sp.Popen(['convert', '-thumbnail', 'x300', '-background', 'white', '-alpha', 'remove', '%s[0]' % uri, THUMBNAIL_TMPFILE]).wait();
+		_sp.Popen(['tmux', 'split-window', '-h', "tiv -r 0.4 -h 52 -p '%s'" % THUMBNAIL_TMPFILE]).wait();
+		# os.remove(THUMBNAIL_TMPFILE); # looks like it doesn't work
+		return;
+	if not moretext and (
+			uri.lower().endswith('.jpg')
+			or uri.lower().endswith('.jpeg')
+			or uri.lower().endswith('.png')
+			or uri.lower().endswith('.gif')
+			or uri.lower().endswith('.svg')
+		):
+		_sp.Popen(['tmux', 'split-window', '-h', "tiv -r 0.4 -h 52 -p %s" % uri]);
+		return;
+	if uri.lower().endswith('.maff'):
+		urilist = maffurl(uri);
+		assert len(urilist) < 2;
+		if len(urilist):
+			_sp.Popen(['tmux', 'split-window', '-h', "w3m '%s'" % urilist[0]]);
+		return;
+	if uri.lower().endswith('.log'):
+		_sp.Popen(['tmux', 'split-window', '-h', "vim '%s'" % uri]);
+		return;
+	_sp.Popen(['tmux', 'split-window', '-h', "less '%s'" % uri]);
+	return;
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser();
+	parser.add_argument('-l', '--level');
+	parser.add_argument('uri');
+	args = parser.parse_args();
+	
+	level = args.level;
+	uri = normalize(args.uri);
+
+	if level == None:
+		level = 'xwin';
+	if level == 'xwin' and not HASXWIN:
+		level = 'term';
+	if level == 'xwin':
+		_sp.Popen([CMD_XOPEN, uri]);
+	elif level == 'term' or level == 'text':
+		tmux_open(uri, level == 'text');
+	elif level == 'redir':
+		print uri;
+	pass;

@@ -102,3 +102,28 @@ set indentkeys=-0#
 source $HOME/.vim/configs/clang_complete.vim
 " for plugin powerline
 "set rtp+=~/.vim/bundle/powerline/powerline/bindings/vim
+
+" open uri under cursor
+function! CatchUri()
+	let uri = matchstr(expand("<cWORD>"), '[a-z]*:\/\/[^>\)]*') " for cWORD, see :help WORD
+	echo uri
+	return uri
+endfunction
+
+function! OpenUri(cmd)
+	let uri = CatchUri()
+	if a:cmd == 'new-xwin'
+		execute "!topen --level=xwin " . uri
+	elseif a:cmd == 'new-term'
+		execute "!topen --level=term " . uri
+	elseif a:cmd == 'new-text'
+		execute "!topen --level=text " . uri
+	elseif a:cmd == 'new-tab'
+		let path = system("topen --level=redir " . uri)
+		execute "tabe " . path
+	endif
+endfunction
+map <Leader>x :call OpenUri('new-xwin')<cr>
+map <Leader>n :call OpenUri('new-term')<cr>
+map <Leader>N :call OpenUri('new-text')<cr>
+map <Leader>t :call OpenUri('new-tab')<cr>
