@@ -113,11 +113,12 @@ endfunction
 function! OpenUri(cmd)
 	let uri = CatchUri()
 	if a:cmd == 'new-xwin'
-		execute "!topen --level=xwin " . uri
+		execute "silent !topen --level=xwin " . uri . " 2>&1 > /dev/null"
+		redraw!
 	elseif a:cmd == 'new-term'
-		execute "!topen --level=term " . uri
+		execute "silent !topen --level=term " . uri
 	elseif a:cmd == 'new-text'
-		execute "!topen --level=text " . uri
+		execute "silent !topen --level=text " . uri
 	elseif a:cmd == 'new-tab'
 		let path = system("topen --level=redir " . uri)
 		execute "tabe " . path
