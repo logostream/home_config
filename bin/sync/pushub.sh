@@ -22,7 +22,7 @@ if [[ `ssh $SERVER_ADDR test -d $SERVER_DIR || echo not exist` ]] ; then
 fi
 
 if [[ $1 == "-b" ]] ; then
-	rsync -avvH --delete "$SERVER_ADDR:$SERVER_DIR/" "$CLIENT_DIR" > ~/log/pushub.log 2> ~/log/pushub.err
+	rsync -avvH --delete "$SERVER_ADDR:$SERVER_DIR/" "$CLIENT_DIR"
 else
-	rsync -avvH --delete "$CLIENT_DIR/" "$SERVER_ADDR:$SERVER_DIR" > ~/log/pushub.log 2> ~/log/pushub.err
+	rsync -avvH --delete "$CLIENT_DIR/" "$SERVER_ADDR:$SERVER_DIR"
 fi
