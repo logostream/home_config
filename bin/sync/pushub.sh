@@ -8,7 +8,7 @@
 #     :$ tail -f ~/log/mirror_sync.log # check log
 # Discription: sync whole repositories between mirrors
 
-CELL=gmacbook
+CELL=XXX
 SERVER_ADDR=stream@foo
 SERVER_DIR=pushub/$CELL
 CLIENT_DIR=$HOME/pushub
