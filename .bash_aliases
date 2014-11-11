@@ -9,6 +9,7 @@ alias man='TERM=xterm man' # fix highlight issue in tmux
 # command for start agent of copy.com as deamon
 alias copydemon='nohup ~/bin/copy/x86_64/CopyConsole -debug -daemon > ~/log/copy.log &'
 alias unzip-gbk='unzip -O CP936'
+alias gds=go_dirs.py
 alias gcd=fun_go_cd
 fun_go_cd() {
 	target=$(go_dirs.py $1)
