@@ -10,30 +10,30 @@ def rreplace(s, old, new, count):
 
 def go_dirs(gopath, srcpath):
 	target = srcpath;
-	if gopath == 'java':
+	if gopath in ['java', 'j']:
 		target = rreplace(srcpath, '/javatests/', '/java/', 1);
-	elif gopath == 'javatests':
+	elif gopath in ['javatests', 'jut']:
 		target = rreplace(srcpath, '/java/', '/javatests/', 1);
-	elif gopath == 'blaze-bin':
+	elif gopath in ['blaze-bin', 'bin']:
 		if target.rfind('/google3/blaze-bin/') != -1:
 			return target;
 		if target == srcpath:
 			target = rreplace(srcpath, '/google3/blaze-genfiles/', '/google3/blaze-bin/', 1);
 		if target == srcpath:
 			target = rreplace(srcpath, '/google3/', '/google3/blaze-bin/', 1);
-	elif gopath == 'blaze-genfiles':
+	elif gopath in ['blaze-genfiles', 'gen']:
 		if target.rfind('/google3/blaze-genfiles/') != -1:
 			return target;
 		if target == srcpath:
 			target = rreplace(srcpath, '/google3/blaze-bin/', '/google3/blaze-genfiles/', 1);
 		if target == srcpath:
 			target = rreplace(srcpath, '/google3/', '/google3/blaze-genfiles/', 1);
-	elif gopath == 'google3/src':
+	elif gopath in ['google3/src', 'src']:
 		if target == srcpath:
 			target = rreplace(srcpath, '/google3/blaze-bin/', '/google3/', 1);
 		if target == srcpath:
 			target = rreplace(srcpath, '/google3/blaze-genfiles/', '/google3/', 1);
-	elif gopath == 'google3/root':
+	elif gopath in ['google3/root', '/', 'google3']:
 		index = srcpath.rfind('/google3/');
 		if index != -1:
 			target = srcpath[:index] + '/google3/';
