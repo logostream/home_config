@@ -9,8 +9,9 @@
 # Discription: sync whole repositories between mirrors
 
 CELL=XXX
+TMP=tmp
 SERVER_ADDR=stream@foo
-SERVER_DIR=pushub/$CELL
+SERVER_DIR=pushub
 CLIENT_DIR=$HOME/pushub
 if [ ! -d $CLIENT_DIR ] ; then
 	echo "Client directory $CLIENT_DIR doesn't exist"
@@ -22,7 +23,7 @@ if [[ `ssh $SERVER_ADDR test -d $SERVER_DIR || echo not exist` ]] ; then
 fi
 
 if [[ $1 == "-b" ]] ; then
-	rsync -avvH --delete "$SERVER_ADDR:$SERVER_DIR/" "$CLIENT_DIR"
+	rsync -avvH --checksum --exclude "/$TMP" --delete "$SERVER_ADDR:$SERVER_DIR/" "$CLIENT_DIR"
 else
-	rsync -avvH --delete "$CLIENT_DIR/" "$SERVER_ADDR:$SERVER_DIR"
+	rsync -avvH --checksum --delete "$CLIENT_DIR/$TMP/" "$SERVER_ADDR:$SERVER_DIR/$CELL"
 fi
