@@ -50,6 +50,10 @@ def go_dirs(gopath, srcpath):
 		target = '%s/github/home_config/bin' % home;
 	elif gopath in ['scrapbook', 'sbk']:
 		target = '%s/github/scrapbook' % home;
+	elif gopath in ['pushub', 'pb']:
+		target = '%s/pushub' % home;
+	elif gopath in ['pushub/tmp', 'pb/t']:
+		target = '%s/pushub/tmp' % home;
 	if not os.path.exists(target):
 		print >> sys.stderr, "path %s dosen't exist, turn to its nearest partent" % target;
 		while not os.path.exists(target):
