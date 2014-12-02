@@ -77,6 +77,10 @@ nnoremap <Leader>p "+p
 vnoremap <Leader>p "+p
 nnoremap <Leader>fi :set foldmethod=indent<CR>
 nnoremap <Leader>b :!echo 'backup as %~'; cp '%' '%~'; ls -l '%'*<CR>
+nnoremap <Leader>h <C-W>h
+nnoremap <Leader>j <C-W>j
+nnoremap <Leader>k <C-W>k
+nnoremap <Leader>l <C-W>l
 " use <Tab> as <Esc> short cut
 nnoremap <Tab> :
 " <Tab>/<C-I> in default mode are used to forward jumplist, now we use <C-N> instead
