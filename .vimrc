@@ -113,6 +113,7 @@ source $HOME/.vim/configs/clang_complete.vim
 " python vim start from here
 python << endpython
 import vim;
+import decimal;
 endpython
 
 " open uri under cursor
@@ -205,6 +206,8 @@ function! s:python_substitute_global(cmd) range
 		if l:i == l:j
 			if !s:python_substitute(a:cmd)
 				break
+			"else
+			"	normal n
 			endif
 		else
 			let l:i += 1
