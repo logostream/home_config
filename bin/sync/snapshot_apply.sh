@@ -16,4 +16,4 @@ if [ ! -d "$dest" ]; then
 	exit 2;
 fi
 
-$dir/rsync_cd.sh "$src" "$dest" $rsync_args
+$dir/rsync_cd.sh "$src" "$dest" --checksum $rsync_args

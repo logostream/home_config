@@ -36,7 +36,7 @@ class CommitCheckReport(object):
 #     * clean + partial -- partial clean, rest part of entry may not clean
 #     * conflict + miss -- maltag, will return None, means the file tagged as 'c' but miss in cache, caused by conflict then rename. The flags couldn't imply a case that the overriding file is part of doc-entry, because it won't lead to a miss.
 #     * conflict + miss + partial -- means (partial conflict) + miss, for the case the ancestor itself miss (means ancestor tagged as 'c' but miss in cache, maltag), we will return None as error, for miss co-existing with partial conflict, it only means the file miss both in cache and data.
-#     * conflict + partial -- partial conflict, means the file not overriding in cache, but the checking file belongs to a part of existing doc entry (we should check in data here). ! we consider it a complete conflict if there already exist a counterpart in data, even if it just a part of one existing doc entry.
+#     * conflict + partial -- partial conflict, means the file not overriding in cache, but the checking file belongs to a part of existing doc entry (we should check in data here). ! we consider it a complete conflict if there already exist a counterpart in data, even if it just a part of one existing doc entry. ! in terms of availability, it actually covers two kinds of situations: one is the file exists in cache only, another is the file exists in data only. to distinguish the two cases, you need to perform more detection, but most of the time you can judge it by context e.g. the siguation in commit_scan_check
 #     * renamed + miss + partial -- ancestor renamed, but file miss
 #     * renamed + partial -- partial renamed
 #     * delay + miss + partial -- ancestor delay, but file miss

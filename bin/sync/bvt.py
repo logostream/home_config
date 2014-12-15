@@ -24,27 +24,20 @@ def pop_pathenv():
 		os.environ['PATH'] = g_pathenv;
 	return;
 
-def common_testpath_set(root_path):
-	_common.REPO_BASE_PATH     = root_path;
-	_common.REPO_CACHE_PATH    = _path.join(_common.REPO_BASE_PATH, 'cache/docs');
-	_common.REPO_AGGSRC_PATH   = _path.join(_common.REPO_BASE_PATH, 'cache/copy');
-	_common.REPO_GIT_PATH      = _path.join(_common.REPO_BASE_PATH, 'cache/github');
-	_common.REPO_GITMAP_PATH   = _path.join(_common.REPO_BASE_PATH, 'cache/gitmap.log');
-	_common.REPO_DATA_PATH     = _path.join(_common.REPO_BASE_PATH, 'data/docs');
-	_common.REPO_ARCH_PATH     = _path.join(_common.REPO_BASE_PATH, 'arch');
-	_common.REPO_TAGS_PATH     = _path.join(_common.REPO_BASE_PATH, 'tagged');
-	_common.REPO_TMP_PATH      = _path.join(_common.REPO_BASE_PATH, 'tmp');
-	_common.REPO_ENTRYFILE_PATH = _path.join(_common.REPO_BASE_PATH, 'data/indexes/entry.log');
+def common_testpath_set(test_home):
+	test_root = _path.join(test_home, 'root');
+	_common.commonpath_set(test_root);
+	_common.REALTIME_LOGPATH = _path.join(test_home, 'realtime.log');
 	return;
 
 def basic_verify(expected_root, got_root, rawlog):
 	for logentry in rawlog:
 		assert logentry.level != _common.LOGLEVEL_ERR;
-	output = _sp.check_output(['rsync', '-rlpgoDvnc', '--delete', '--exclude', '/tagged*', '--exclude', '/cache/gitmap.log*', _path.join(expected_root, ''), _path.join(got_root, '')]);
+	output = _sp.check_output(['rsync', '-rlpgoDvnc', '--checksum', '--delete', '--exclude', '/cache/tagged*', '--exclude', '/cache/gitmap.log*', _path.join(expected_root, ''), _path.join(got_root, '')]);
 	if len(output.splitlines()) != 4:
 		print output;
 		raise RuntimeError('basic_verify failed');
-	for fconfig in ['tagged', 'tagged.new', 'cache/gitmap.log', 'cache/gitmap.log.new']:
+	for fconfig in ['cache/tagged', 'cache/tagged.new', 'cache/gitmap.log', 'cache/gitmap.log.new']:
 		output = _sp.check_output(['sort_diff.sh', _path.join(expected_root, fconfig), _path.join(got_root, fconfig), '-u']);
 		if len(output) > 0:
 			raise RuntimeError('basic_verify failed');
@@ -55,8 +48,7 @@ def run_test(test_name, test_func, verify_func, logonly=True):
 	test_before = _path.join(test_home, 'before');
 	test_after = _path.join(test_home, 'after');
 	test_root = _path.join(test_home, 'root');
-	common_testpath_set(test_root);
-	_common.REALTIME_LOGPATH = _path.join(test_home, 'realtime.log');
+	common_testpath_set(test_home);
 
 	_sp.check_output(['rm', '-r', test_root]);
 	_sp.check_output(['cp', '-r', test_before, test_root]);
@@ -169,6 +161,10 @@ def cache_status_test(logonly):
 			'ancestor': 'conflict.d',
 		},
 		'conflict.d/partial.log': {
+			'status': _common.STATEFLAG_CONFLICT | _common.STATEFLAG_PARTIAL,
+			'ancestor': 'conflict.d',
+		},
+		'conflict.d/new.log': {
 			'status': _common.STATEFLAG_CONFLICT | _common.STATEFLAG_PARTIAL,
 			'ancestor': 'conflict.d',
 		},

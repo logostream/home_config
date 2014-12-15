@@ -1,0 +1,20 @@
+bvt.py -- set of basic test cases
+repo.py -- cli tool, entry point
+	usage: req [-h] [-r ROOT] [-l]
+		{status,agg,cache-commit,restore,entryfile,git-commit} ...
+
+	optional arguments:
+	-h, --help            show this help message and exit
+	-r ROOT, --root ROOT  base root
+	-l, --logonly         logonly
+
+	action:
+	{status,agg,cache-commit,restore,entryfile,git-commit}
+	status              cache file status query
+	agg                 aggregate from copy to cache
+	cache-commit        commit from cache to data
+	restore             restore miss from data to cache
+	entryfile           sync entryfiles
+	git-commit          commit from git to data
+snapshot_take.sh $src_root $dest_root
+	# including tagged, data/, cache/, tgged/, pushub/, not include github/

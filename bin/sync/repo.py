@@ -150,7 +150,7 @@ if __name__ == '__main__':
 	parser_status.set_defaults(action='status');
 
 	# agg
-	parser_agg = subparsers.add_parser('agg', help='aggregate from copy to cache');
+	parser_agg = subparsers.add_parser('agg', help='aggregate from pushub to cache');
 	parser_agg.set_defaults(action='agg');
 
 	# cache-commit
@@ -158,7 +158,7 @@ if __name__ == '__main__':
 	parser_cache_commit.set_defaults(action='cache-commit');
 
 	# restore
-	parser_restore = subparsers.add_parser('restore', help='restore miss from cache to cache');
+	parser_restore = subparsers.add_parser('restore', help='restore miss from data to cache');
 	parser_restore.set_defaults(action='restore');
 
 	# entryfile

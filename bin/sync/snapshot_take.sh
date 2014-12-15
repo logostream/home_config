@@ -25,4 +25,4 @@ if [ -d "$dest" ]; then
 	cp -val "$dest" "$backup"
 fi
 
-$dir/rsync_cd.sh "$src" "$dest" $rsync_args
+$dir/rsync_cd.sh "$src" "$dest" --checksum $rsync_args

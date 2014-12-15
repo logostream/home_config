@@ -32,16 +32,16 @@ LOGLEVEL_WARN = 1;
 LOGLEVEL_ERR  = 2;
 
 # repo config
-REPO_BASE_PATH   = '/home/stream/tmp';
-REPO_CACHE_PATH  = '%s/cache/docs' % REPO_BASE_PATH;
-REPO_AGGSRC_PATH = '%s/cache/copy' % REPO_BASE_PATH;
-REPO_GIT_PATH    = '%s/cache/github' % REPO_BASE_PATH;
-REPO_GITMAP_PATH = '%s/cache/gitmap.log' % REPO_BASE_PATH;
-REPO_DATA_PATH   = '%s/data/docs' % REPO_BASE_PATH;
-REPO_ARCH_PATH   = '%s/arch' % REPO_BASE_PATH;
-REPO_TAGS_PATH   = '/home/stream/.config/ranger/tagged';
-REPO_TMP_PATH    = '%s/tmp' % REPO_BASE_PATH;
-REPO_ENTRYFILE_PATH = '%s/data/indexes/entry.log' % REPO_BASE_PATH;
+REPO_BASE_PATH      = None;
+REPO_CACHE_PATH     = None;
+REPO_AGGSRC_PATH    = None;
+REPO_GIT_PATH       = None;
+REPO_GITMAP_PATH    = None;
+REPO_DATA_PATH      = None;
+REPO_ARCH_PATH      = None;
+REPO_TAGS_PATH      = None;
+REPO_TMP_PATH       = None;
+REPO_ENTRYFILE_PATH = None;
 
 # realtime log
 REALTIME_LOGLEVEL = LOGLEVEL_INFO # LOGLEVEL_* or None means disable
@@ -677,12 +677,12 @@ def commonpath_set(root_path):
 
 	REPO_BASE_PATH      = root_path;
 	REPO_CACHE_PATH     = _path.join(REPO_BASE_PATH, 'cache/docs');
-	REPO_AGGSRC_PATH    = _path.join(REPO_BASE_PATH, 'Copy');
+	REPO_AGGSRC_PATH    = _path.join(REPO_BASE_PATH, 'pushub');
 	REPO_GIT_PATH       = _path.join(REPO_BASE_PATH, 'github');
 	REPO_GITMAP_PATH    = _path.join(REPO_BASE_PATH, 'cache/gitmap.log');
 	REPO_DATA_PATH      = _path.join(REPO_BASE_PATH, 'data/docs');
 	REPO_ARCH_PATH      = _path.join(REPO_BASE_PATH, 'arch');
-	REPO_TAGS_PATH      = _path.join(REPO_BASE_PATH, 'tagged');
+	REPO_TAGS_PATH      = _path.join(REPO_BASE_PATH, 'cache/tagged');
 	REPO_TMP_PATH       = _path.join(REPO_BASE_PATH, 'tmp');
 	REPO_ENTRYFILE_PATH = _path.join(REPO_BASE_PATH, 'data/indexes/entry.log');
 	REALTIME_LOGPATH    = _path.join(REPO_BASE_PATH, 'realtime.log');
