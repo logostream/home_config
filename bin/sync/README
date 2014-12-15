@@ -1,3 +1,9 @@
+Dependency
+===
+python-simplejson # support utf-8 encoding/decoding
+
+Usage
+===
 bvt.py -- set of basic test cases
 repo.py -- cli tool, entry point
 	usage: req [-h] [-r ROOT] [-l]
@@ -18,3 +24,14 @@ repo.py -- cli tool, entry point
 	git-commit          commit from git to data
 snapshot_take.sh $src_root $dest_root
 	# including tagged, data/, cache/, tgged/, pushub/, not include github/
+
+Routine
+===
+1. check baseline ~/arch/snapshot/latest, have a test with snapshot_test.sh
+2. check ~/pushub, ensure all stuff have been sync
+3. `$ repo [-l] agg$`, and check ~/cache/tagged, ~/cache/gitmap.log, snapshot_test.sh
+4. take a before commit snapshot
+5. restart ranger and make manually change
+6. `$ repo [-l] cache-commit`, and check ~/cache/tagged, ~/cache/gitmap.log, snapshot_test.sh
+7. `$ repo entryfile`, and check ~/data/indexes/entryfile.log
+4. take a after commit snapshot, remove before one
