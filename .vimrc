@@ -125,15 +125,17 @@ endfunction
 
 function! OpenUri(cmd)
 	let uri = s:catch_uri()
+	let uri = substitute(uri, "#", "\\\\#", "g")
+	let uri = substitute(uri, "%", "\\\\%", "g")
 	if a:cmd == 'new-xwin'
-		execute "silent !topen --level=xwin " . uri . " 2>&1 > /dev/null"
+		execute "silent !topen --level=xwin '" . uri . "' 2>&1 > /dev/null"
 		redraw!
 	elseif a:cmd == 'new-term'
-		execute "silent !topen --level=term " . uri
+		execute "silent !topen --level=term '" . uri . "'"
 	elseif a:cmd == 'new-text'
-		execute "silent !topen --level=text " . uri
+		execute "silent !topen --level=text '" . uri . "'"
 	elseif a:cmd == 'new-tab'
-		let path = system("topen --level=redir " . uri)
+		let path = system("topen --level=redir '" . uri . "'")
 		execute "tabe " . path
 	endif
 endfunction
