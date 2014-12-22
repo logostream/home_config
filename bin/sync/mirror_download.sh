@@ -1,12 +1,14 @@
 #!/bin/bash
 # Synopsis:
-#     :$ mirror_sync.sh
+#     :$ mirror_download.sh
 #     enter password:
 #     ^Z
 #     :$ bg %1
 #     :$ cat ~/log/mirror_sync.err # check error log
 #     :$ tail -f ~/log/mirror_sync.log # check log
 # Discription: sync whole repositories between mirrors
+echo deprecated and disable by default
+exit 1
 
 SRC_PREFIX=stream@redland.cloudapp.net:$HOME
 DEST=$HOME

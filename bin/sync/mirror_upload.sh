@@ -1,6 +1,6 @@
 #!/bin/bash
 # Synopsis:
-#     :$ mirror_sync.sh
+#     :$ mirror_upload.sh
 #     enter password:
 #     ^Z
 #     :$ bg %1
@@ -9,5 +9,11 @@
 # Discription: sync whole repositories between mirrors
 
 SRC_PREFIX=$HOME
-DEST=stream@blackperl.cloudapp.net:$HOME
-rsync -e "ssh -p1109" -avvH --checksum --delete --exclude="cache/copy" --exclude="cache/github" "$SRC_PREFIX/data" "$SRC_PREFIX/cache" "$SRC_PREFIX/arch" "$DEST" > ~/log/mirror_sync.log 2> ~/log/mirror_sync.err
+DEST=stream@redland.cloudapp.net:$HOME
+rsync -e "ssh -p1109" -avvH --checksum --delete \
+		  "$SRC_PREFIX/cache" \
+		  "$SRC_PREFIX/data" \
+		  "$SRC_PREFIX/pushub" \
+		  "$SRC_PREFIX/github" \
+		  "$SRC_PREFIX/arch" \
+		  "$DEST" 2> ~/log/mirror_sync.err | tee ~/log/mirror_sync.log

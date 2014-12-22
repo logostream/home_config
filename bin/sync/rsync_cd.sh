@@ -11,4 +11,4 @@ if [ ! -d "$src/" ]; then
 fi
 
 # by default we don't use --checksum
-rsync -av --delete --include="/data/***" --include="/cache/***" --include="/tagged" --include="/pushub/***" --exclude="*" $rsync_args "$src/" "$dest"
+rsync -av --delete --include="/data/***" --include="/cache/***" --include="/pushub/***" --exclude="*" $rsync_args "$src/" "$dest"
