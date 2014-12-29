@@ -49,7 +49,7 @@ Routine
 ===
 1. check baseline ~/arch/snapshot/latest, have a test with snapshot_test.sh
 2. check ~/pushub, ensure all stuff have been sync
-3. `$ repo [-l] agg$`, and check ~/cache/tagged, ~/cache/gitmap.log, snapshot_test.sh
+3. `$ repo [-l] agg`, and check ~/cache/tagged, ~/cache/gitmap.log, snapshot_test.sh
 4. take a before commit snapshot
 5. restart ranger and make manually change
 6. `$ repo [-l] cache-commit`, and check ~/cache/tagged, ~/cache/gitmap.log, snapshot_test.sh
