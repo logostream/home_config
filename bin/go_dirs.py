@@ -126,6 +126,11 @@ def _(gopath, srcpath):
     home = os.getenv('HOME');
     return '%s/pushub/tmp' % home;
 
+@register_dir(['pushub/tmp/scratch', 'pb/sch', 'sch'], 'goto pushub/tmp/scratch')
+def _(gopath, srcpath):
+    home = os.getenv('HOME');
+    return '%s/pushub/tmp/scratch' % home;
+
 @register_dir(['pushub/scrapbook', 'pushub/sbk', 'pb/sbk'], 'goto pushub/scrapbook')
 def _(gopath, srcpath):
     home = os.getenv('HOME');
