@@ -1,0 +1,10 @@
+--- /dev/null	2014-10-18 18:30:49.867999570 +0000
++++ /etc/apt/preferences	2015-03-17 00:36:31.335912187 +0000
+@@ -0,0 +1,7 @@
++Package: *
++Pin: release a=wheezy
++Pin-Priority: 700
++
++Package: *
++Pin: release a=jessie
++Pin-Priority: 650
