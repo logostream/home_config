@@ -14,6 +14,8 @@ else
     " Color terminal
     set t_Co=256
     colorscheme customleo
+    hi CursorColumn term=underline ctermbg=235 guibg=#050505
+    hi ColorColumn term=underline ctermbg=234 guibg=#030303
 endif
 hi Search guifg=white guibg=#4e9a06
 hi Pmenu guibg=DarkMagenta
@@ -33,6 +35,7 @@ set virtualedit=onemore
 set laststatus=2
 " Highlight current line
 set cursorline
+set colorcolumn=100
 "set cursorcolumn
 "let g:Powerline_symbols = 'fancy'
 "let g:Powerline_theme = 'solarized256'

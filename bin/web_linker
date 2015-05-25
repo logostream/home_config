@@ -1,0 +1,79 @@
+#!/usr/bin/python
+import argparse
+import subprocess as _sp
+import os.path as _path
+import re
+import os
+import sys
+
+g_linkerptn = re.compile(r'\[([^\[\]]+)\]: (.+)')
+
+def parse_linker(linker_file):
+    link_tab = {}
+    links = set()
+    with open(linker_file, 'r') as linker_file:
+        for line in linker_file:
+            line = line.rstrip();
+            if len(line) == 0:
+                log("warning: empty line.")
+                continue
+            m = g_linkerptn.match(line)
+            assert not m is None
+            path, link = m.groups()
+            assert not path in link_tab
+            assert not link in links
+            link_tab[path] = link
+            links.add(link)
+            log('%s -> %s' % (link, path))
+            assert not _path.exists(path)
+    return link_tab
+
+def patch_entry(link_tab, entry_file):
+    return
+
+def download_links(link_tab, target):
+    for path, link in link_tab.iteritems():
+        path = _path.join(target, path)
+        head = _path.dirname(path)
+        log('info: start to save %s -> %s.' % (link, path))
+        if _sp.call(['mkdir', '-p', head]):
+            log('error: failed to create dir %s.' % head)
+            return
+        if _sp.call(['wget', link, '-O', path]):
+            log('error: failed to save file %s.' % path)
+            return
+    return
+
+def log(msg):
+    print >> sys.stderr, msg
+    return
+
+def main(args):
+    if not args.entry_file is None and not args.target is None:
+        print "Can't serve in multiple mode."
+        return
+    link_tab = parse_linker(args.linker_file)
+
+    if not args.entry_file is None:
+        patch_entry(link_tab, args.entry_file)
+
+    if not args.target is None:
+        download_links(link_tab, args.target)
+    return
+
+def build_argparser(parser):
+    parser.add_argument('-e', '--entry_file',
+            help="Entry file patch mode; Patch the entry file by add links.")
+    parser.add_argument('-t', '--target',
+            help="Download mode; webget links to the target folder.")
+    parser.add_argument('-c', '--check', action="store_true",
+            help="Check the links before go ahead (enable by default).")
+    parser.add_argument('linker_file')
+    return
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    build_argparser(parser)
+    args = parser.parse_args()
+    main(args)
+    pass

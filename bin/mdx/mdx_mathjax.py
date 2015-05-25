@@ -6,6 +6,8 @@ class MathJaxPattern(markdown.inlinepatterns.Pattern):
 
     def __init__(self):
         # looks like this won't match the contents in `code` or ```code block```
+        # group start with 2:
+        # https://pythonhosted.org/Markdown/extensions/api.html#inlinepatterns
         markdown.inlinepatterns.Pattern.__init__(self, r'(?<![\\])(\$\$?)(.+?)\2')
 
     def handleMatch(self, m):
@@ -33,7 +35,13 @@ MathJax.Hub.Config({
     },
     displayAlign: "left",
     "HTML-CSS": {
-        styles: {".MathJax_Display": {"padding-left": "15px", "border-left":"4px solid #DDD"}}
+        scale: 90,
+        styles: {
+          ".MathJax_Display": {
+              "padding-left": "15px", "border-left":"4px solid #DDD",
+              "margin-bottom":"12px", "margin-top":"12px"
+          }
+        }
     }
 });
 </script>
@@ -50,5 +58,3 @@ class MathJaxExtension(markdown.Extension):
 
 def makeExtension(configs=None):
     return MathJaxExtension(configs)
-
-

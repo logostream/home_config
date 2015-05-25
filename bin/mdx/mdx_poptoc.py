@@ -18,6 +18,7 @@ from markdown.util import etree, parseBoolValue, AMP_SUBSTITUTE
 from markdown.extensions.headerid import slugify, unique, itertext, stashedHTML2text
 import re
 
+TOC_REGEX = r"\{\{toc:(.*?)\}\}"
 
 def order_toc_list(toc_list):
     """Given an unsorted list with errors and skips, return a nested one.
@@ -113,17 +114,25 @@ class TocTreeprocessor(Treeprocessor):
         # Add title to the div
         if self.config["title"]:
             header = etree.SubElement(div, "span")
-            header.attrib["class"] = "toctitle"
-            header.attrib["onclick"] = "togglePopToc()"
+            header.attrib["class"] = "toc_title"
             header.text = self.config["title"]
+            # build show/hide button and expand/collapse button
+            header.append(etree.fromstring(re.sub(r"\s+", " ", '''
+              <span class="toc_buttons">
+              [<a href="javascript:togglePopToc()" id="toc_show">hide</a>]
+              [<a href="javascript:toggleSubToc()" id="toc_expand">-</a>]
+              </span>
+            ''')));
 
         def build_etree_ul(toc_list, parent):
             ul = etree.SubElement(parent, "ul")
+            ul.attrib["class"] = "toc_sublist"
             for item in toc_list:
                 # List item link, to be inserted into the toc div
                 if item['level'] > int(self.config['maxlevel']):
                     continue;
                 li = etree.SubElement(ul, "li")
+                li.attrib["onclick"] = "toggleSubTocLocal(this)"
                 link = etree.SubElement(li, "a")
                 link.text = item.get('name', '')
                 link.attrib["href"] = '#' + item.get('id', '')
@@ -133,9 +142,10 @@ class TocTreeprocessor(Treeprocessor):
         
         node = build_etree_ul(toc_list, div)
         node.attrib["id"] = "toc_list"
+        node.attrib["class"] = "toc_list" # override .toc_sublist
         return node
 
-    marker_ptn = re.compile(r"\{TOC\}(?:\((.+?)\))?");
+    marker_ptn = re.compile(TOC_REGEX);
     def run(self, doc):
 
         wrapper = etree.Element("div")
@@ -158,7 +168,8 @@ class TocTreeprocessor(Treeprocessor):
         toc_list = []
         marker_found = False
         for (p, c) in self.iterparent(doc):
-            text = ''.join(itertext(c)).strip()
+            # filter @tag which comes from mdx_tag.py
+            text = re.sub(r'@\w+', '', ''.join(itertext(c))).strip()
             if not text:
                 continue
 
@@ -176,7 +187,9 @@ class TocTreeprocessor(Treeprocessor):
                         p[i] = wrapper
                         break
                 if marker_mth.group(1):
-                    self.config["title"] = marker_mth.group(1);
+                    title = marker_mth.group(1).strip();
+                    if len(title):
+                      self.config["title"] = title;
                 marker_found = True
                             
             if header_rgx.match(c.tag):
@@ -215,17 +228,44 @@ class TocPost(Postprocessor):
     def run(self, text):
         header = '''
 <style>
-div.toc_wrapper{position:fixed;z-index:100;margin-left:70%;margin-top:30px;height:700px;overflow:auto;}
-div.toc {background:#E6F1F6;border:1px solid #B7C7CF;padding:0.5em;border-radius:3px}
-div.toc .toctitle{display:block;margin:0.5em;text-align:center;font-weight:bold}
-div.toc a{display:block;margin-right:1em;}
+div.toc_wrapper{position:fixed;z-index:100;margin-left:810px;margin-top:0px;}
+div.toc {background:#f7f7f7;border-left:4px solid #ddd;padding:0.5em;border-radius:2px}
+div.toc .toc_title{display:block;margin:0.5em;text-align:center;font-weight:bold}
+ul.toc_list {max-height:700px;overflow:auto;font-size:small;font-weight:bold;list-style-type:none}
+ul.toc_list a{margin-right:1em;}
+ul.toc_sublist{font-weight:normal;list-style-type:none}
+span.toc_buttons{font-size:x-small}
 </style>
 <script type="text/javascript">
-    var g_displayPopToc = true;
+    $().ready(function () {
+        $("ul.toc_list a").click(function (event) {event.stopPropagation()})
+        $("ul.toc_list li").click(function (event) {event.stopPropagation()})
+    })
+
     function togglePopToc()
     {
-        g_displayPopToc = !g_displayPopToc;
-        document.getElementById("toc_list").style.display = g_displayPopToc? "" : "none";
+        if($("#toc_show").text().trim() == "show") {
+            $("#toc_list").show();
+            $("#toc_show").text("hide");
+        } else {
+            $("#toc_list").hide();
+            $("#toc_show").text("show");
+        }
+    }
+
+    function toggleSubToc()
+    {
+        if($("#toc_expand").text().trim() == "+") {
+            $("ul.toc_sublist").show();
+            $("#toc_expand").text("-");
+        } else {
+            $("ul.toc_sublist").hide();
+            $("#toc_expand").text("+");
+        }
+    }
+
+    function toggleSubTocLocal(li) {
+        $(li).find("ul").toggle();
     }
 </script>
         '''
