@@ -1,0 +1,8 @@
+--- /etc/apt/sources.list~	2015-03-17 00:27:20.596776200 +0000
++++ /etc/apt/sources.list	2015-03-17 00:29:40.760557087 +0000
+@@ -6,3 +6,5 @@
+ deb-src http://gce_debian_mirror.storage.googleapis.com/ wheezy-updates main contrib non-free
+ deb http://http.debian.net/debian wheezy main
+ deb-src http://http.debian.net/debian wheezy main
++deb http://ftp.us.debian.org/debian jessie main contrib non-free
++deb-src http://ftp.us.debian.org/debian jessie main contrib non-free

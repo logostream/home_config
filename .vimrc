@@ -1,3 +1,5 @@
+scriptencoding utf-8
+set encoding=utf-8
 " Begin .vimrc
 call pathogen#infect()
 set hlsearch
