@@ -20,6 +20,6 @@ class TOpenExtension(markdown.Extension):
     def extendMarkdown(self, md, md_globals):
         md.inlinePatterns.add('topen', TOpenPattern(), '<escape')
 
-def makeExtension(configs={}):
+def makeExtension(**configs):
     return TOpenExtension(configs)
 

@@ -20,6 +20,6 @@ class AnchorExtension(markdown.Extension):
     def extendMarkdown(self, md, md_globals):
         md.inlinePatterns.add('anchor', AnchorPattern(), '<escape')
 
-def makeExtension(configs={}):
+def makeExtension(**configs):
     return AnchorExtension(configs)
 

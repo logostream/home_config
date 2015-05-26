@@ -39,5 +39,5 @@ class GithubCssExtension(markdown.Extension):
         # reference OrderedDict for more
         md.postprocessors.add('githubcss', GithubCssPost(), '_end');
 
-def makeExtension(configs={}):
+def makeExtension(**configs):
     return GithubCssExtension(configs)

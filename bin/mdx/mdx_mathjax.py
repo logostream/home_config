@@ -56,5 +56,5 @@ class MathJaxExtension(markdown.Extension):
         # reference OrderedDict for more
         md.postprocessors.add('mathjax', MathJaxPost(), '_end');
 
-def makeExtension(configs={}):
+def makeExtension(**configs):
     return MathJaxExtension(configs)
