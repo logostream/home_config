@@ -22,6 +22,6 @@ class TagExtension(markdown.Extension):
     def extendMarkdown(self, md, md_globals):
         md.inlinePatterns.add('tag', TagPattern(), '<escape')
 
-def makeExtension(configs=None):
+def makeExtension(configs={}):
     return TagExtension(configs)
 

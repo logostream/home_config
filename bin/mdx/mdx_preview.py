@@ -123,6 +123,6 @@ class PreviewExtension(markdown.Extension):
         # reference OrderedDict for more
         md.postprocessors.add('preview', PreviewPost(), '_end');
 
-def makeExtension(configs=None):
+def makeExtension(configs={}):
     return PreviewExtension(configs)
 

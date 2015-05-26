@@ -16,7 +16,7 @@ class HighLightExtension(markdown.Extension):
         # reference OrderedDict for more
         md.postprocessors.add('highlight', HighLightPost(), '_end');
 
-def makeExtension(configs=None):
+def makeExtension(configs={}):
     return HighLightExtension(configs)
 
 

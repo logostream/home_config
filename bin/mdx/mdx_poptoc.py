@@ -112,7 +112,7 @@ class TocTreeprocessor(Treeprocessor):
     
     def build_toc_etree(self, div, toc_list):
         # Add title to the div
-        if self.config["title"]:
+        if self.config["title"] and len(self.config["title"]):
             header = etree.SubElement(div, "span")
             header.attrib["class"] = "toc_title"
             header.text = self.config["title"]
@@ -275,13 +275,13 @@ class TocExtension(Extension):
     
     TreeProcessorClass = TocTreeprocessor
     
-    def __init__(self, configs=[]):
+    def __init__(self, configs={}):
         self.config = { "slugify" : [slugify,
                             "Function to generate anchors based on header text-"
                             "Defaults to the headerid ext's slugify function."],
-                        "title" : [None,
+                        "title" : ["",
                             "Title to insert into TOC <div> - "
-                            "Defaults to None"],
+                            "Defaults to empty string"],
                         "anchorlink" : [0,
                             "1 if header should be a self link"
                             "Defaults to 0"],
@@ -292,7 +292,7 @@ class TocExtension(Extension):
                             "max level of head to generate"],
                        }
 
-        for key, value in configs:
+        for key, value in configs.items():
             self.setConfig(key, value)
 
     def extendMarkdown(self, md, md_globals):
@@ -307,5 +307,5 @@ class TocExtension(Extension):
         md.postprocessors.add("toc", TocPost(), "_end")
 
 
-def makeExtension(configs={}):
+def makeExtension(**configs):
     return TocExtension(configs=configs)
