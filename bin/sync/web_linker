@@ -5,6 +5,7 @@ import os.path as _path
 import re
 import os
 import sys
+import common_def as _common
 
 g_linkerptn = re.compile(r'\[([^\[\]]+)\]: (.+)')
 
@@ -13,7 +14,7 @@ def parse_linker(linker_file):
     links = set()
     with open(linker_file, 'r') as linker_file:
         for line in linker_file:
-            line = line.rstrip();
+            line = line.rstrip()
             if len(line) == 0:
                 log("warning: empty line.")
                 continue
@@ -28,7 +29,39 @@ def parse_linker(linker_file):
             assert not _path.exists(path)
     return link_tab
 
-def patch_entry(link_tab, entry_file):
+def patch_entry(link_tab, root):
+    if root is None:
+        root = '/home/stream'
+    root = _path.abspath(root)
+    assert _path.exists(root)
+    _common.commonpath_set(root)
+
+    ancestor_tab = {}
+    for path in link_tab:
+        ancestor = path
+        while len(ancestor) > 0:
+            if ancestor not in ancestor_tab:
+                ancestor_tab[ancestor] = []
+            ancestor_tab[ancestor].append(path)
+            ancestor = _path.dirname(ancestor)
+
+    def _do_patch(path, entry):
+        if not _common.isancestor(_common.REPO_DATA_PATH, path):
+            log('warning: %s is not a data path (skip).' % path)
+            return
+        path = _path.relpath(path, _common.REPO_DATA_PATH)
+        if path in ancestor_tab:
+            for subpath in ancestor_tab[path]:
+                subentry = _path.relpath(subpath, path)
+                if len(subentry) == 0:
+                    entry.append('\t@link: %s' % link_tab[subpath])
+                else:
+                    entry.append('\t@link: [%s](%s)' % (subentry, link_tab[subpath]))
+        return
+
+    _common.load_entryfile()
+    _common.enum_active_entries(_do_patch)
+    _common.dump_entryfile()
     return
 
 def download_links(link_tab, target):
@@ -49,21 +82,25 @@ def log(msg):
     return
 
 def main(args):
-    if not args.entry_file is None and not args.target is None:
+    if args.entry_patch and not args.target is None:
         print "Can't serve in multiple mode."
         return
+    if not args.root is None and not args.entry_patch:
+        log("warning: specify entry_path outside entry mode (ignore).")
     link_tab = parse_linker(args.linker_file)
 
-    if not args.entry_file is None:
-        patch_entry(link_tab, args.entry_file)
+    if args.entry_patch:
+        patch_entry(link_tab, args.root)
 
     if not args.target is None:
         download_links(link_tab, args.target)
     return
 
 def build_argparser(parser):
-    parser.add_argument('-e', '--entry_file',
+    parser.add_argument('-e', '--entry_patch', action="store_true",
             help="Entry file patch mode; Patch the entry file by add links.")
+    parser.add_argument('-r', '--root',
+            help="In entry file patch mode; specify the root of repo.")
     parser.add_argument('-t', '--target',
             help="Download mode; webget links to the target folder.")
     parser.add_argument('-c', '--check', action="store_true",
