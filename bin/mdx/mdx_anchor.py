@@ -20,6 +20,12 @@ class AnchorExtension(markdown.Extension):
     def extendMarkdown(self, md, md_globals):
         md.inlinePatterns.add('anchor', AnchorPattern(), '<escape')
 
-def makeExtension(**configs):
+def makeExtension(*args, **configs):
+    assert len(args) == 0 or len(configs)==0
+    if len(args):
+        assert len(args) == 1
+        print >> sys.stderr, "warning: older version of markdown_py api."
+        configs = dict(args[0])
+
     return AnchorExtension(configs)
 

@@ -39,5 +39,11 @@ class GithubCssExtension(markdown.Extension):
         # reference OrderedDict for more
         md.postprocessors.add('githubcss', GithubCssPost(), '_end');
 
-def makeExtension(**configs):
+def makeExtension(*args, **configs):
+    assert len(args) == 0 or len(configs)==0
+    if len(args):
+        assert len(args) == 1
+        print >> sys.stderr, "warning: older version of markdown_py api."
+        configs = dict(args[0])
+
     return GithubCssExtension(configs)
