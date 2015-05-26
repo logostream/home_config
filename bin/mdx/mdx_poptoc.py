@@ -17,6 +17,7 @@ from markdown.postprocessors import Postprocessor
 from markdown.util import etree, parseBoolValue, AMP_SUBSTITUTE
 from markdown.extensions.headerid import slugify, unique, itertext, stashedHTML2text
 import re
+import sys
 
 TOC_REGEX = r"\{\{toc:(.*?)\}\}"
 
@@ -307,5 +308,11 @@ class TocExtension(Extension):
         md.postprocessors.add("toc", TocPost(), "_end")
 
 
-def makeExtension(**configs):
+def makeExtension(*args, **configs):
+    assert len(args) == 0 or len(configs)==0
+    if len(args):
+        assert len(args) == 1
+        print >> sys.stderr, "warning: older version of markdown_py api."
+        configs = dict(args[0])
+
     return TocExtension(configs=configs)
