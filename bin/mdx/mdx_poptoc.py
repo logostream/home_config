@@ -15,7 +15,8 @@ from markdown import Extension
 from markdown.treeprocessors import Treeprocessor
 from markdown.postprocessors import Postprocessor
 from markdown.util import etree, parseBoolValue, AMP_SUBSTITUTE
-from markdown.extensions.headerid import slugify, unique, itertext, stashedHTML2text
+from markdown.extensions.headerid import slugify, unique, stashedHTML2text
+
 import re
 import sys
 
@@ -170,7 +171,7 @@ class TocTreeprocessor(Treeprocessor):
         marker_found = False
         for (p, c) in self.iterparent(doc):
             # filter @tag which comes from mdx_tag.py
-            text = re.sub(r'@\w+', '', ''.join(itertext(c))).strip()
+            text = ''.join(c.itertext())
             if not text:
                 continue
 
@@ -180,9 +181,8 @@ class TocTreeprocessor(Treeprocessor):
             # We do not allow the marker inside a header as that
             # would causes an enless loop of placing a new TOC 
             # inside previously generated TOC.
-            marker_mth = self.marker_ptn.match(c.text.strip()) if c.text else None;
-            if c.text and marker_mth and \
-               not header_rgx.match(c.tag) and c.tag not in ['pre', 'code']:
+            marker_mth = self.marker_ptn.match(text.strip());
+            if marker_mth and not header_rgx.match(c.tag) and c.tag not in ['pre', 'code']:
                 for i in range(len(p)):
                     if p[i] == c:
                         p[i] = wrapper
@@ -194,7 +194,7 @@ class TocTreeprocessor(Treeprocessor):
                 marker_found = True
                             
             if header_rgx.match(c.tag):
-                
+                text = re.sub(r'@\w+', '', text).strip()
                 # Do not override pre-existing ids 
                 if not "id" in c.attrib:
                     elem_id = stashedHTML2text(text, self.markdown)
@@ -306,7 +306,6 @@ class TocExtension(Extension):
         # to redefine ids after toc is created. But we do want toc prettified.
         md.treeprocessors.add("toc", tocext, "_end")
         md.postprocessors.add("toc", TocPost(), "_end")
-
 
 def makeExtension(*args, **configs):
     assert len(args) == 0 or len(configs)==0
