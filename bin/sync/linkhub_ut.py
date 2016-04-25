@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding=utf-8
 
-# TODO: import order
+# TODO (style): import order
 import sys
 import datetime as _dt
 import inspect as _isp
@@ -15,10 +15,24 @@ import os.path as _path
 
 from mock import patch
 
-# TODO: styles: return, <= 80 chars perline, indent
+# TODO (styles): return, <= 80 chars perline, indent
 
 class _LinkhubTests(_ut.TestCase):
 	# test _map_to_candidates
+	def test_map_to_candidates_uuid(self):
+		matched = {
+			'uU_a' : {'uuid' : 'uU_a', 'date' : _dt.date(2012, 1, 2)},
+		}
+		unmatched = {
+			'uU_ab' : {'uuid' : 'uU_ab'},
+			'_uU_a' : {'uuid' : '_uU_a'}
+		}
+
+		self.assertEqual(matched.values(), _lhub._map_to_candidates(
+					linkmap_table=dict(matched.items() + unmatched.items()),
+					uuid='uU_a', check_unique=False))
+		return
+
 	def test_map_to_candidates_name(self):
 		matched = [
 			{'name' : 'a', 'date' : _dt.date(2012, 1, 2)},
@@ -28,7 +42,8 @@ class _LinkhubTests(_ut.TestCase):
 			{'name' : 'c'}, {'name' : 'd'}
 		]
 
-		self.assertEqual(matched, _lhub._map_to_candidates(matched + unmatched, 'a', None, check_unique=False))
+		self.assertEqual(matched, _lhub._map_to_candidates(
+					matched + unmatched, name='a', check_unique=False))
 		return
 
 	def test_map_to_candidates_url(self):
@@ -40,7 +55,8 @@ class _LinkhubTests(_ut.TestCase):
 			{'url' : 'c'}, {'url' : 'd'}
 		]
 
-		self.assertEqual(matched, _lhub._map_to_candidates(matched + unmatched, None, 'a', check_unique=False))
+		self.assertEqual(matched, _lhub._map_to_candidates(
+					matched + unmatched, url='a', check_unique=False))
 		return
 
 	def test_map_to_candidates_name_url(self):
@@ -56,7 +72,8 @@ class _LinkhubTests(_ut.TestCase):
 			{'name' : 'x', 'url' : 'y'},
 		]
 
-		self.assertEqual(matched, _lhub._map_to_candidates(matched + unmatched, 'a', 'b', check_unique=False))
+		self.assertEqual(matched, _lhub._map_to_candidates(
+					matched + unmatched, name='a', url='b', check_unique=False))
 		return
 
 	def test_map_to_candidates_sort(self):
@@ -69,7 +86,8 @@ class _LinkhubTests(_ut.TestCase):
 			{'name' : 'a', 'date' : _dt.date(2012, 1, 1)},
 		]
 
-		self.assertEqual(expected, _lhub._map_to_candidates(matched, 'a', None, check_unique=False))
+		self.assertEqual(expected, _lhub._map_to_candidates(
+					matched, name='a', check_unique=False))
 		return
 
 	def test_map_to_candidates_deprecated(self):
@@ -81,7 +99,8 @@ class _LinkhubTests(_ut.TestCase):
 			{'name' : 'a', 'tags' : ['deprecated']},
 		]
 
-		self.assertEqual(matched, _lhub._map_to_candidates(matched + unmatched, 'a', None, check_unique=False))
+		self.assertEqual(matched, _lhub._map_to_candidates(
+					matched + unmatched, name='a', check_unique=False))
 		return
 
 	@patch('linkhub._warn')
@@ -91,62 +110,74 @@ class _LinkhubTests(_ut.TestCase):
 			{'name' : 'a', 'date' : _dt.date(2012, 1, 1)},
 		]
 
-		self.assertEqual([matched[0]], _lhub._map_to_candidates([matched[0]], 'a', None, check_unique=True))
+		self.assertEqual([matched[0]], _lhub._map_to_candidates(
+					[matched[0]], name='a', check_unique=True))
 
 		try:
-			_lhub._map_to_candidates(matched, 'b', None, check_unique=True)
+			_lhub._map_to_candidates(matched, name='b', check_unique=True)
 			raise RuntimeError('Expected AssertionError not happened.')
 		except AssertionError:
 			pass # expected
 
-		_lhub._map_to_candidates(matched, 'a', None, check_unique=True)
+		_lhub._map_to_candidates(matched, name='a', check_unique=True)
 		self.assertEqual(mock.call('Found %d candidates.', 2), warn_mock.call_args)
 		return
 
 
 	# test _build_link_yaml()
 	def test_build_link_yaml(self):
-		self.assertEqual('name: foo\nurl: bar', _lhub._build_link_yaml({'name' : 'foo', 'url' : 'bar'}))
+		self.assertEqual('uuid: uU_a\n',
+				_lhub._build_link_yaml({'uuid' : 'uU_a', 'name' : 'foo', 'url' : 'bar'}))
 		return
 
 
 	# test _check_no_duplicates():
 	def test_check_no_duplicates(self):
 		self.assertFalse(_lhub._check_no_duplicates([
-				{'name' : 'a', 'url' : 'b'},
-				{'name' : 'a', 'url' : 'c'},
+				{'uuid' : 'uU_a', 'name' : 'a', 'url' : 'b'},
+				{'uuid' : 'uU_a', 'name' : 'c', 'url' : 'd'},
 				]))
 
 		self.assertFalse(_lhub._check_no_duplicates([
-				{'name' : 'b', 'url' : 'a'},
-				{'name' : 'c', 'url' : 'a'},
+				{'uuid' : 'uU_a', 'name' : 'a', 'url' : 'b'},
+				{'uuid' : 'uU_b', 'name' : 'a', 'url' : 'c'},
 				]))
 
 		self.assertFalse(_lhub._check_no_duplicates([
-				{'name' : 'a', 'url' : 'b'},
-				{'name' : 'a', 'url' : 'b'},
+				{'uuid' : 'uU_a', 'name' : 'b', 'url' : 'a'},
+				{'uuid' : 'uU_b', 'name' : 'c', 'url' : 'a'},
+				]))
+
+		self.assertFalse(_lhub._check_no_duplicates([
+				{'uuid' : 'uU_a', 'name' : 'a', 'url' : 'b'},
+				{'uuid' : 'uU_b', 'name' : 'a', 'url' : 'b'},
 				]))
 
 		self.assertTrue(_lhub._check_no_duplicates([
-				{'name' : 'a', 'url' : 'b'},
-				{'name' : 'c', 'url' : 'd'},
+				{'uuid' : 'uU_a', 'name' : 'a', 'url' : 'b'},
+				{'uuid' : 'uU_b', 'name' : 'c', 'url' : 'd'},
 				]))
 		return
 
-	def test_check_no_duplicates(self):
-		self.assertTrue(_lhub._check_no_duplicates([
-				{'name' : 'a', 'url' : 'b'},
-				{'name' : 'a', 'url' : 'b', 'tags' : ['deprecated']},
+	def test_check_no_duplicates_deprecated(self):
+		self.assertFalse(_lhub._check_no_duplicates([
+				{'uuid' : 'uU_a', 'name' : 'a', 'url' : 'b'},
+				{'uuid' : 'uU_a', 'name' : 'c', 'url' : 'd', 'tags' : ['depredated']},
 				]))
 
 		self.assertTrue(_lhub._check_no_duplicates([
-				{'name' : 'b', 'url' : 'a'},
-				{'name' : 'c', 'url' : 'a', 'tags' : ['deprecated']},
+				{'uuid' : 'uU_a', 'name' : 'a', 'url' : 'b'},
+				{'uuid' : 'uU_b', 'name' : 'a', 'url' : 'b', 'tags' : ['deprecated']},
 				]))
 
 		self.assertTrue(_lhub._check_no_duplicates([
-				{'name' : 'a', 'url' : 'b'},
-				{'name' : 'a', 'url' : 'b', 'tags' : ['deprecated']},
+				{'uuid' : 'uU_a', 'name' : 'b', 'url' : 'a'},
+				{'uuid' : 'uU_b', 'name' : 'c', 'url' : 'a', 'tags' : ['deprecated']},
+				]))
+
+		self.assertTrue(_lhub._check_no_duplicates([
+				{'uuid' : 'uU_a', 'name' : 'a', 'url' : 'b'},
+				{'uuid' : 'uU_b', 'name' : 'a', 'url' : 'b', 'tags' : ['deprecated']},
 				]))
 		return
 
@@ -173,27 +204,56 @@ class _LinkhubTests(_ut.TestCase):
 	# test _check_local_files()
 	@patch('os.path.exists')
 	def test_check_local_files(self, exists_mock):
-		exists_mock.side_effect = lambda(path): path.find('/exists') >= 0
-		
+		exists_mock.side_effect = lambda(path): path.find('/uU_exists') >= 0
+
 		self.assertTrue(_lhub._check_local_files([
-				{'name' : 'exists', 'date' : _dt.date.today()},
-				{'name' : 'not exists', 'date' : _dt.date.today(), 'tags' : ['deprecated']}
+				{'uuid' : 'uU_exists_a', 'date' : _dt.date.today()},
+				{'uuid' : 'uU_b', 'date' : _dt.date.today(), 'tags' : ['deprecated']}
 				]))
-		
+
 		self.assertFalse(_lhub._check_local_files([
-				{'name' : 'exists', 'date' : _dt.date.today()},
-				{'name' : 'not exists', 'date' : _dt.date.today()}
+				{'uuid' : 'uU_exists_a', 'date' : _dt.date.today()},
+				{'uuid' : 'uU_b', 'date' : _dt.date.today()}
 				]))
-		
+
 		self.assertFalse(_lhub._check_local_files([
-				{'name' : 'exists', 'date' : _dt.date.today(), 'tags' : ['deprecated']},
-				{'name' : 'not exists', 'date' : _dt.date.today(), 'tags' : ['deprecated']}
+				{'uuid' : 'uU_exists_a', 'date' : _dt.date.today(), 'tags' : ['deprecated']},
+				{'uuid' : 'uU_b', 'date' : _dt.date.today(), 'tags' : ['deprecated']}
 				]))
-		
+
 		self.assertFalse(_lhub._check_local_files([
-				{'name' : 'exists', 'date' : _dt.date.today(), 'tags' : ['deprecated']},
-				{'name' : 'not exists', 'date' : _dt.date.today()}
+				{'uuid' : 'uU_exists_a', 'date' : _dt.date.today(), 'tags' : ['deprecated']},
+				{'uuid' : 'uU_b', 'date' : _dt.date.today()}
 				]))
+		return
+
+
+	# test _check_successor()
+	@patch('os.path.exists')
+	def test_check_successor(self, exists_mock):
+		self._load_context([
+				{'uuid' : 'uU_a', 'date' : _dt.date.today()},
+				{'uuid' : 'uU_b', 'date' : _dt.date.today(), 'tags' : ['deprecated']}
+				])
+		self.assertFalse(_lhub._check_successor(_lhub._linkmap, _lhub._linkmap_table))
+
+		self._load_context([
+				{'uuid' : 'uU_a', 'date' : _dt.date.today()},
+				{'uuid' : 'uU_b', 'date' : _dt.date.today(), 'successor' : 'uU_a'}
+				])
+		self.assertFalse(_lhub._check_successor(_lhub._linkmap, _lhub._linkmap_table))
+
+		self._load_context([
+				{'uuid' : 'uU_a', 'date' : _dt.date.today()},
+				{'uuid' : 'uU_b', 'date' : _dt.date.today(), 'tags' : ['deprecated'], 'successor' : 'uU_c'}
+				])
+		self.assertFalse(_lhub._check_successor(_lhub._linkmap, _lhub._linkmap_table))
+
+		self._load_context([
+				{'uuid' : 'uU_a', 'date' : _dt.date.today()},
+				{'uuid' : 'uU_b', 'date' : _dt.date.today(), 'tags' : ['deprecated'], 'successor' : 'uU_a'}
+				])
+		self.assertTrue(_lhub._check_successor(_lhub._linkmap, _lhub._linkmap_table))
 		return
 
 
@@ -201,7 +261,8 @@ class _LinkhubTests(_ut.TestCase):
 	@patch('__builtin__.open')
 	@patch('os.path.exists')
 	def test_load_linkmap_unicode(self, exists_mock, open_mock):
-		yaml = """- name: Article Name
+		yaml = """- uuid: uU_a
+  name: Article Name
   url: http://article/url
   date: 2012-01-12
   tags: [deprecated, auto]
@@ -211,13 +272,15 @@ class _LinkhubTests(_ut.TestCase):
   - alternative url 1
   - alternative url 2
 
-- name: Image Name
+- uuid: uU_b
+  name: Image Name
   url: http://image/url
   date: 2012-03-22
   tags: null
 
 # Unicode test
-- name: 中文
+- uuid: uU_c
+  name: 中文
   url: http://www.example.com/path?key=value#foo
   date: 2012-03-23
   tags: # Same as null
@@ -226,10 +289,11 @@ class _LinkhubTests(_ut.TestCase):
 """
 		self._mock_read_yaml_file(_lhub._LINKMAP_PATH, yaml, exists_mock, open_mock)
 
-		linkmap, linkmap_yaml = _lhub._load_linkmap()
+		linkmap, linkmap_table, linkmap_yaml = _lhub._load_linkmap()
 
 		# Verify parsed object
 		self.assertEqual(linkmap_yaml, yaml)
+		self.assertEqual(linkmap[0]['uuid'], 'uU_a')
 		self.assertEqual(linkmap[0]['name'], 'Article Name')
 		self.assertEqual(linkmap[0]['url'], 'http://article/url')
 		self.assertEqual(linkmap[0]['date'], _dt.date(2012, 01, 12))
@@ -237,30 +301,39 @@ class _LinkhubTests(_ut.TestCase):
 		self.assertEqual(linkmap[0]['comment'], u'test the string')
 		self.assertEqual(linkmap[0]['alt_urls'], ['alternative url 1', 'alternative url 2'])
 
+		self.assertEqual(linkmap[1]['uuid'], 'uU_b')
 		self.assertEqual(linkmap[1]['name'], 'Image Name')
 		self.assertEqual(linkmap[1]['url'], 'http://image/url')
 		self.assertEqual(linkmap[1]['date'], _dt.date(2012, 03, 22))
 		self.assertEqual(linkmap[1]['tags'], None)
 
+		self.assertEqual(linkmap[2]['uuid'], 'uU_c')
 		self.assertEqual(linkmap[2]['name'], u'中文')
 		self.assertEqual(linkmap[2]['url'], 'http://www.example.com/path?key=value#foo')
 		self.assertEqual(linkmap[2]['date'], _dt.date(2012, 03, 23))
 		self.assertEqual(linkmap[2]['tags'], None)
 		self.assertEqual(linkmap[2]['comment'], u'道可道，非常道')
+
+		assert linkmap_table == {
+			'uU_a': linkmap[0],
+			'uU_b': linkmap[1],
+			'uU_c': linkmap[2],
+		}
 		return
 
 	@patch('__builtin__.open')
 	@patch('os.path.exists')
 	def test_load_linkmap_empty(self, exists_mock, open_mock):
 		self._mock_read_yaml_file(_lhub._LINKMAP_PATH, '', exists_mock, open_mock)
-		self.assertEqual(([], ''), _lhub._load_linkmap())
+		self.assertEqual(([], {}, ''), _lhub._load_linkmap())
 		return
 
 
 	# test _diff_linkmap()
 	@patch('linkhub._info')
 	def test_diff_linkmap_unicode(self, info_mock):
-		linkmap_yaml = """- name: foo
+		linkmap_yaml = """- uuid: uU_a
+  name: foo
   url: http://foo.com
   date: 2012-01-12
   tags: [deprecated, auto]
@@ -270,21 +343,23 @@ class _LinkhubTests(_ut.TestCase):
   - alternative url 1
   - alternative url 2
 """
-		expected_info_outputs = [
-			'--- before.yaml',
-			'+++ after.yaml',
-			'@@ -1,9 +1,9 @@',
-			'-- name: foo',
-			'+- name: bar',
-			'   url: http://foo.com',
-			'   date: 2012-01-12',
-			'   tags: [deprecated, auto]',
-			'   comment: |-',
-			'-    test the string',
-			'+    test the string have 中文',
-			'   alt_urls:',
-			'   - alternative url 1',
-			'   - alternative url 2',
+		expected_info_calls = [
+			mock.call('Diff linkmap.'),
+			mock.call('%s', '--- before.yaml'),
+			mock.call('%s', '+++ after.yaml'),
+			mock.call('%s', '@@ -1,10 +1,10 @@'),
+			mock.call('%s', ' - uuid: uU_a'),
+			mock.call('%s', '-  name: foo'),
+			mock.call('%s', '+  name: bar'),
+			mock.call('%s', '   url: http://foo.com'),
+			mock.call('%s', '   date: 2012-01-12'),
+			mock.call('%s', '   tags: [deprecated, auto]'),
+			mock.call('%s', '   comment: |-'),
+			mock.call('%s', '-    test the string'),
+			mock.call('%s', '+    test the string have 中文'),
+			mock.call('%s', '   alt_urls:'),
+			mock.call('%s', '   - alternative url 1'),
+			mock.call('%s', '   - alternative url 2'),
 		]
 
 		linkmap = self._linkmap_from_str(linkmap_yaml)
@@ -294,12 +369,13 @@ class _LinkhubTests(_ut.TestCase):
 		_lhub._diff_linkmap(linkmap, linkmap_yaml)
 
 		# verify
-		self._verify_info_outputs(info_mock, expected_info_outputs)
+		self._verify_info_calls(info_mock, expected_info_calls)
 		return
 
 	@patch('linkhub._info')
 	def test_diff_linkmap_nochange(self, info_mock):
-		linkmap_yaml = """- name: foo
+		linkmap_yaml = """- uuid: uU_a
+  name: foo
   url: http://foo.com
   date: 2012-01-12
   tags: [deprecated, auto]
@@ -309,19 +385,22 @@ class _LinkhubTests(_ut.TestCase):
   - alternative url 1
   - alternative url 2
 """
-		expected_info_outputs = []
+		expected_info_calls = [
+			mock.call('Diff linkmap.'),
+		]
 
 		linkmap = self._linkmap_from_str(linkmap_yaml)
 		_lhub._diff_linkmap(linkmap, linkmap_yaml)
 
-		self._verify_info_outputs(info_mock, expected_info_outputs)
+		self._verify_info_calls(info_mock, expected_info_calls)
 		return
 
 
 	# test _export_linkmap()
 	@patch('linkhub._save_to_file')
 	def test_export_linkmap_unicode(self, save_to_file_mock):
-		linkmap_yaml = """- name: Article Name
+		linkmap_yaml = """- uuid: uU_a
+  name: Article Name
   url: http://article/url
   date: 2012-01-12
   tags: [deprecated, auto]
@@ -331,12 +410,14 @@ class _LinkhubTests(_ut.TestCase):
   - alternative url 1
   - alternative url 2
 
-- name: Image Name
+- uuid: uU_b
+  name: Image Name
   url: http://image/url
   date: 2012-03-22
   tags: null
 
-- name: 中文
+- uuid: uU_c
+  name: 中文
   url: http://www.example.com/path?key=value#foo
   date: 2012-03-23
   tags: null
@@ -351,7 +432,7 @@ class _LinkhubTests(_ut.TestCase):
 
 	# test _format_linkmap()
 	def test_format_linkmap_entries_style(self):
-		same_value = _dt.date.today() # test not aliases
+		same_value = _dt.date(2016, 02, 28) # test not aliases
 		linkmap = [
 			_col.OrderedDict({'foo': same_value}), 
 			_col.OrderedDict({'bar': same_value}),
@@ -363,7 +444,8 @@ class _LinkhubTests(_ut.TestCase):
 
 	def test_format_linkmap_roundtrip(self):
 		# Covers cases of 'comment' style, 'alt_urls' style, long url, unicode, ordered dict
-		linkmap_yaml = """- name: Article Name
+		linkmap_yaml = """- uuid: uU_a
+  name: Article Name
   url: http://article/url
   date: 2012-01-12
   tags: [deprecated, auto]
@@ -373,12 +455,14 @@ class _LinkhubTests(_ut.TestCase):
   - alternative url 1
   - alternative url 2
 
-- name: Image Name
+- uuid: uU_b
+  name: Image Name
   url: http://image/url?looooooooooooooooooooooooooooooooooooong=hashSDSVAEREWCWA#@#REWCAW2323tgerWEswe@#@FCWSVRHYERYH%^TR$4rq34
   date: 2012-03-22
   tags: null
 
-- name: 中文
+- uuid: uU_c
+  name: 中文
   url: http://www.example.com/path?key=value#foo
   date: 2012-03-23
   tags: null
@@ -426,26 +510,47 @@ class _LinkhubTests(_ut.TestCase):
 			pass # expected
 		return
 
+	@patch('__builtin__.open')
+	@patch('os.path.exists')
+	def test_save_to_file_to_pwd(self, exists_mock, open_mock):
+		file_mock = self._mock_write_file('save.txt', exists_mock, open_mock)
 
-	# test _copy_to_file()
+		_lhub._save_to_file('Wikipedia\n维基百科', 'save.txt', False)
+
+		self.assertEqual(file_mock.write.call_args, mock.call('Wikipedia\n维基百科'))
+		return
+
+
+	# test _copy_file()
+	# TODO (p2): add case for dir_name == ''
 	@patch('subprocess.call')
 	@patch('os.path.exists')
-	def test_copy_to_file(self, exists_mock, call_mock):
+	def test_copy_file(self, exists_mock, call_mock):
 		exists_mock.return_value = True
 
-		_lhub._copy_to_file('src/file', 'dest/file', False)
+		_lhub._copy_file('src/file', 'dest/file', False)
 
 		self.assertEqual(call_mock.call_args_list, [mock.call(['cp', 'src/file', 'dest/file'])])
 		return
 
 	@patch('subprocess.call')
 	@patch('os.path.exists')
-	def test_copy_to_file_dry_run(self, exists_mock, call_mock):
+	def test_copy_file_dry_run(self, exists_mock, call_mock):
 		exists_mock.return_value = True
 
-		_lhub._copy_to_file('src/file', 'dest/file', True)
+		_lhub._copy_file('src/file', 'dest/file', True)
 
 		self.assertEqual(call_mock.call_args_list, [])
+		return
+
+	@patch('subprocess.call')
+	@patch('os.path.exists')
+	def test_copy_file_to_pwd(self, exists_mock, call_mock):
+		exists_mock.return_value = True
+
+		_lhub._copy_file('src/file', 'dest_file', False)
+
+		self.assertEqual(call_mock.call_args_list, [mock.call(['cp', 'src/file', 'dest_file'])])
 		return
 
 
@@ -462,7 +567,7 @@ class _LinkhubTests(_ut.TestCase):
 
 	@patch('subprocess.call')
 	@patch('os.path.exists')
-	def test_copy_to_file_dry_run(self, exists_mock, call_mock):
+	def test_copy_file_dry_run(self, exists_mock, call_mock):
 		exists_mock.return_value = True
 
 		_lhub._remove_file('to/delete', True)
@@ -472,6 +577,7 @@ class _LinkhubTests(_ut.TestCase):
 
 
 	# test _download_file()
+	# TODO (p2): add case for dir_name == ''
 	@patch('tempfile.mkdtemp')
 	@patch('subprocess.call')
 	@patch('os.path.exists')
@@ -485,7 +591,7 @@ class _LinkhubTests(_ut.TestCase):
 		self.assertEqual(mkdtemp_mock.call_args_list, [mock.call('linktmp')])
 		self.assertEqual(call_mock.call_args_list, [
 				mock.call(['mkdir', '-p', '/home/local']),
-				mock.call(['wget', '-o', '/tmp/linktmp123/downloading', 'http://download.com']),
+				mock.call(['wget', '-O', '/tmp/linktmp123/downloading', 'http://download.com']),
 				mock.call(['mv', '/tmp/linktmp123/downloading', '/home/local/path']),
 				mock.call(['rmdir', '/tmp/linktmp123']),
 				])
@@ -503,7 +609,7 @@ class _LinkhubTests(_ut.TestCase):
 		self.assertEqual(_lhub._TEMP_DIR_PREFIX, 'linktmp')
 		self.assertEqual(mkdtemp_mock.call_args_list, [mock.call('linktmp')])
 		self.assertEqual(call_mock.call_args_list, [
-				mock.call(['wget', '-o', '/tmp/linktmp123/downloading', 'http://download.com']),
+				mock.call(['wget', '-O', '/tmp/linktmp123/downloading', 'http://download.com']),
 				mock.call(['mv', '/tmp/linktmp123/downloading', '/home/local/path']),
 				mock.call(['rmdir', '/tmp/linktmp123']),
 				])
@@ -522,22 +628,22 @@ class _LinkhubTests(_ut.TestCase):
 		return
 
 
-	# test _filename_from_url()
-	def test_filename_from_url(self):
+	# test _name_from_url()
+	def test_name_from_url(self):
 		# none
-		self.assertTrue(_lhub._filename_from_url('http://foo/') == '')
+		self.assertTrue(_lhub._name_from_url('http://foo/') == '')
 
 		# simple
-		self.assertEqual(_lhub._filename_from_url('http://foo/bar'), 'bar')
+		self.assertEqual(_lhub._name_from_url('http://foo/bar'), 'bar')
 
 		# params
-		self.assertEqual(_lhub._filename_from_url('http://foo/bar?params'), 'bar')
+		self.assertEqual(_lhub._name_from_url('http://foo/bar?params'), 'bar')
 
 		# anchor
-		self.assertEqual(_lhub._filename_from_url('http://foo/bar#title'), 'bar')
+		self.assertEqual(_lhub._name_from_url('http://foo/bar#title'), 'bar')
 
 		# unquote url encoding
-		self.assertEqual(_lhub._filename_from_url('http://foo/%E9%9D%9E%E5%B8%B8%E9%81%93'), '非常道')
+		self.assertEqual(_lhub._name_from_url('http://foo/%E9%9D%9E%E5%B8%B8%E9%81%93'), '非常道')
 		return
 
 
@@ -559,7 +665,7 @@ class _LinkhubTests(_ut.TestCase):
 	def test_match_regex(self):
 		self.assertTrue(_lhub._match('abcabc', 'abcabc', _lhub._MODE_REGEX))
 		self.assertTrue(_lhub._match('abcabc', 'abc', _lhub._MODE_REGEX))
-		self.assertTrue(_lhub._match('abcabc', 'abc.', _lhub._MODE_REGEX))
+		self.assertTrue(_lhub._match('abcabc', '.ca.', _lhub._MODE_REGEX))
 		self.assertFalse(_lhub._match('abcabc', 'abcd', _lhub._MODE_REGEX))
 		return
 
@@ -596,7 +702,8 @@ class _LinkhubTests(_ut.TestCase):
 	# test _to_local_path()
 	def test_to_local_path(self):
 		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
-		self.assertEqual('/home/stream/linkhub/20120123/article', _lhub._to_local_path({
+		self.assertEqual('/home/stream/linkhub/20120123/uU_a', _lhub._to_local_path({
+					'uuid' : 'uU_a',
 					'name' : 'article',
 					'date' : _dt.date(2012, 01, 23)
 				}))
@@ -606,6 +713,7 @@ class _LinkhubTests(_ut.TestCase):
 	# test _get_date()
 	def test_get_date(self):
 		self.assertEqual(_dt.date(2012, 01, 23), _lhub._get_date({
+					'uuid' : 'uU_a',
 					'name' : 'article',
 					'date' : _dt.date(2012, 01, 23)
 				}))
@@ -632,8 +740,11 @@ class _LinkhubTests(_ut.TestCase):
 
 
 	# test _new_entry()
-	def test_new_entry(self):
+	@patch('linkhub._genereate_uuid')
+	def test_new_entry(self, generate_uuid_mock):
+		generate_uuid_mock.return_value = 'uU_a'
 		self.assertEqual(_col.OrderedDict([
+					('uuid', 'uU_a'),
 					('name', 'foo'),
 					('url', 'http://bar'),
 					('date', _dt.date.today()),
@@ -641,12 +752,14 @@ class _LinkhubTests(_ut.TestCase):
 				]), _lhub._new_entry({
 					'name' : 'foo',
 					'url' : 'http://bar'
-				}))
+				}, {}))
 		return
 
-
-	def test_new_entry_auto(self):
+	@patch('linkhub._genereate_uuid')
+	def test_new_entry_auto(self, generate_uuid_mock):
+		generate_uuid_mock.return_value = 'uU_a'
 		self.assertEqual(_col.OrderedDict([
+					('uuid', 'uU_a'),
 					('name', 'foo'),
 					('url', 'http://bar'),
 					('date', _dt.date.today()),
@@ -655,7 +768,7 @@ class _LinkhubTests(_ut.TestCase):
 					'name' : 'foo',
 					'url' : 'http://bar',
 					'auto' : None
-				}))
+				}, {}))
 		return
 
 
@@ -670,10 +783,10 @@ class _LinkhubTests(_ut.TestCase):
 		unmatched = [
 			{'name' : 'xc'}, {'name' : 'cxy'}, {'name' : 'dbd'}
 		]
-		self._load_context(linkmap=(matched + unmatched))
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
 		_lhub._find('a', None, _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=False)
-		
+
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
 
@@ -687,10 +800,10 @@ class _LinkhubTests(_ut.TestCase):
 		unmatched = [
 			{'url' : 'xc'}, {'url' : 'cxy'}, {'url' : 'dbd'}
 		]
-		self._load_context(linkmap=(matched + unmatched))
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
 		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=False)
-		
+
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
 
@@ -704,10 +817,10 @@ class _LinkhubTests(_ut.TestCase):
 			{'name' : 'abc', 'url' : 'acd'}, {'name' : 'cb', 'url' : 'fb'},
 			{'name' : 'bd', 'url' : 'aa'}, {'name' : 'xy', 'url' : 'zz'},
 		]
-		self._load_context(linkmap=(matched + unmatched))
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
 		_lhub._find('a', 'b', _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=False)
-		
+
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
 
@@ -720,10 +833,10 @@ class _LinkhubTests(_ut.TestCase):
 		unmatched = [
 			{'url' : 'xc'}, {'url' : 'cxy', 'alt_urls' : ['bb', 'dd']}
 		]
-		self._load_context(linkmap=(matched + unmatched))
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
 		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, include_alt_urls=True, include_deprecated=False)
-		
+
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
 
@@ -738,10 +851,10 @@ class _LinkhubTests(_ut.TestCase):
 			{'name' : 'bb', 'url' : '', 'alt_urls' : ['bb', 'cd']},
 			{'name' : 'aa', 'url' : '', 'alt_urls' : ['aa', 'cd']},
 		]
-		self._load_context(linkmap=(matched + unmatched))
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
 		_lhub._find('a', 'b', _lhub._MODE_CONTAINS, include_alt_urls=True, include_deprecated=False)
-		
+
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
 
@@ -758,7 +871,7 @@ class _LinkhubTests(_ut.TestCase):
 		unmatched = [
 			{'name' : 'xc'}, {'name' : 'cxy', 'tags' : ['deprecated']}
 		]
-		self._load_context(linkmap=(matched + deprecated + unmatched))
+		self._load_context(linkmap=(matched + deprecated + unmatched), load_linkmap_table=False)
 
 		_lhub._find('a', None, _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=False)
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
@@ -781,21 +894,25 @@ class _LinkhubTests(_ut.TestCase):
 			{'name' : 'ca', 'date' : _dt.date(2012, 1, 2)},
 			{'name' : 'abc', 'date' : _dt.date(2012, 1, 1)},
 		]
-		self._load_context(linkmap=(matched))
+		self._load_context(linkmap=(matched), load_linkmap_table=False)
 
 		_lhub._find('a', None, _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=True)
-		
+
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, expected)
 		return
 
 
 	# test _load_rawlinks()
+	@patch('linkhub._genereate_uuid')
 	@patch('linkhub._today')
 	@patch('linkhub._download_file')
 	@patch('linkhub._export_linkmap')
 	@patch('__builtin__.open')
 	@patch('os.path.exists')
-	def test_load_rawlinks(self, exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock):
+	def test_load_rawlinks(
+			self, exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock,
+			generate_uuid_mock):
+		generate_uuid_mock.side_effect = iter(['uU_a', 'uU_b', 'uU_c'])
 		rawlinks_yaml = """- name: foo
   url: http://foo
   auto:
@@ -808,25 +925,28 @@ class _LinkhubTests(_ut.TestCase):
   auto:
 """
 		linkmap_yaml_before = ''
-		linkmap_yaml_after = """- name: foo
+		linkmap_yaml_after = """- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [auto]
 
-- name: bar
+- uuid: uU_b
+  name: bar
   url: http://bar
   date: 2012-12-01
   tags: null
 
-- name: baz
+- uuid: uU_c
+  name: baz
   url: http://baz
   date: 2012-12-01
   tags: [auto]
 """
 		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
 		expected_calls = [
-			mock.call('http://foo', '/home/stream/linkhub/20121201/foo', True),
-			mock.call('http://baz', '/home/stream/linkhub/20121201/baz', True),
+			mock.call('http://foo', '/home/stream/linkhub/20121201/uU_a', True),
+			mock.call('http://baz', '/home/stream/linkhub/20121201/uU_c', True),
 		]
 		today_mock.return_value = _dt.date(2012, 12, 1)
 		self._mock_read_yaml_file('/path/of/rawlinks.yaml', rawlinks_yaml, exists_mock, open_mock)
@@ -838,32 +958,37 @@ class _LinkhubTests(_ut.TestCase):
 		self._verify_download_file_calls(download_file_mock, expected_calls)
 		return
 
+	@patch('linkhub._genereate_uuid')
 	@patch('linkhub._today')
 	@patch('linkhub._download_file')
 	@patch('linkhub._export_linkmap')
 	@patch('__builtin__.open')
 	@patch('os.path.exists')
-	def _ut_load_rawlinks_miss_name(
-			exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock):
-		rawlinks_yaml = """- url: http://foo
+	def test_load_rawlinks_miss_name(
+			self, exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock,
+			generate_uuid_mock):
+		generate_uuid_mock.side_effect = iter(['uU_a', 'uU_b'])
+		rawlinks_yaml = """- url: http://go/foo
   auto:
 
-- url: http://bar
+- url: http://go/bar
 """
 		linkmap_yaml_before = ''
-		linkmap_yaml_after = """- name: foo
-  url: http://foo
+		linkmap_yaml_after = """- uuid: uU_a
+  name: foo
+  url: http://go/foo
   date: 2012-12-01
   tags: [auto]
 
-- name: bar
-  url: http://bar
+- uuid: uU_b
+  name: bar
+  url: http://go/bar
   date: 2012-12-01
   tags: null
 """
 		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
 		expected_calls = [
-			mock.call('http://foo', '/home/stream/linkhub/20121201/foo', True),
+			mock.call('http://go/foo', '/home/stream/linkhub/20121201/uU_a', True),
 		]
 		today_mock.return_value = _dt.date(2012, 12, 1)
 		self._mock_read_yaml_file('/path/of/rawlinks.yaml', rawlinks_yaml, exists_mock, open_mock)
@@ -875,13 +1000,16 @@ class _LinkhubTests(_ut.TestCase):
 		self._verify_download_file_calls(download_file_mock, expected_calls)
 		return
 
+	@patch('linkhub._genereate_uuid')
 	@patch('linkhub._today')
 	@patch('linkhub._download_file')
 	@patch('linkhub._export_linkmap')
 	@patch('__builtin__.open')
 	@patch('os.path.exists')
-	def _ut_load_rawlinks_no_duplicate(
-			exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock):
+	def test_load_rawlinks_no_duplicate(
+			self, exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock,
+			generate_uuid_mock):
+		generate_uuid_mock.side_effect = iter(['uU_a', 'uU_b'])
 		rawlinks_yaml = """- name: foo
   url: http://foo
   auto:
@@ -889,29 +1017,33 @@ class _LinkhubTests(_ut.TestCase):
 - name: bar
   url: http://bar
 """
-		linkmap_yaml_before = """- name: bar
+		linkmap_yaml_before = """- uuid: uU_0
+  name: bar
   url: http://bar
   date: 2012-12-01
   tags: [deprecated]
 """
-		linkmap_yaml_after = """- name: bar
+		linkmap_yaml_after = """- uuid: uU_0
+  name: bar
   url: http://bar
   date: 2012-12-01
   tags: [deprecated]
 
-- name: foo
+- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [auto]
 
-- name: bar
+- uuid: uU_b
+  name: bar
   url: http://bar
   date: 2012-12-01
   tags: null
 """
 		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
 		expected_calls = [
-			mock.call('http://foo', '/home/stream/linkhub/20121201/foo', True),
+			mock.call('http://foo', '/home/stream/linkhub/20121201/uU_a', True),
 		]
 		today_mock.return_value = _dt.date(2012, 12, 1)
 		self._mock_read_yaml_file('/path/of/rawlinks.yaml', rawlinks_yaml, exists_mock, open_mock)
@@ -923,13 +1055,16 @@ class _LinkhubTests(_ut.TestCase):
 		self._verify_download_file_calls(download_file_mock, expected_calls)
 		return
 
+	@patch('linkhub._genereate_uuid')
 	@patch('linkhub._today')
 	@patch('linkhub._download_file')
 	@patch('linkhub._export_linkmap')
 	@patch('__builtin__.open')
 	@patch('os.path.exists')
-	def _ut_load_rawlinks_duplicate(
-			exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock):
+	def test_load_rawlinks_duplicate(
+			self, exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock,
+			generate_uuid_mock):
+		generate_uuid_mock.side_effect = iter(['uU_a'])
 		rawlinks_yaml = """- name: foo
   url: http://foo
 
@@ -937,17 +1072,20 @@ class _LinkhubTests(_ut.TestCase):
   url: http://bar
   auto:
 """
-		linkmap_yaml_before = """- name: bar
+		linkmap_yaml_before = """- uuid: uU_0
+  name: bar
   url: http://bar
   date: 2012-12-01
-  tags: [deprecated]
+  tags: [auto]
 """
-		linkmap_yaml_after = """- name: bar
+		linkmap_yaml_after = """- uuid: uU_0
+  name: bar
   url: http://bar
   date: 2012-12-01
   tags: [auto]
 
-- name: foo
+- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: null
@@ -955,7 +1093,7 @@ class _LinkhubTests(_ut.TestCase):
 		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
 		expected_calls = [
 			# Will still try downloading the file
-			mock.call('http://bar', '/home/stream/linkhub/20121201/bar', True),
+			mock.call('http://bar', '/home/stream/linkhub/20121201/uU_0', True),
 		]
 		today_mock.return_value = _dt.date(2012, 12, 1)
 		self._mock_read_yaml_file('/path/of/rawlinks.yaml', rawlinks_yaml, exists_mock, open_mock)
@@ -967,14 +1105,17 @@ class _LinkhubTests(_ut.TestCase):
 		self._verify_download_file_calls(download_file_mock, expected_calls)
 		return
 
+	@patch('linkhub._genereate_uuid')
 	@patch('linkhub._today')
 	@patch('linkhub._download_file')
 	@patch('linkhub._export_linkmap')
 	@patch('__builtin__.open')
 	@patch('os.path.exists')
-	def _ut_load_rawlinks_not_override(
-			exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock):
-		rawlinks_yaml = """- name: foo (exists)
+	def test_load_rawlinks_not_override(
+			self, exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock,
+			generate_uuid_mock):
+		generate_uuid_mock.side_effect = iter(['uU_exists_a', 'uU_b'])
+		rawlinks_yaml = """- name: foo
   url: http://foo
   auto:
 
@@ -983,23 +1124,24 @@ class _LinkhubTests(_ut.TestCase):
   auto:
 """
 		linkmap_yaml_before = ''
-		linkmap_yaml_after = """- name: foo (exists)
+		linkmap_yaml_after = """- uuid: uU_exists_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [auto]
 
-- name: bar
+- uuid: uU_b
+  name: bar
   url: http://bar
   date: 2012-12-01
   tags: [auto]
 """
 		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
 		expected_calls = [
-			# Will still try downloading the file
-			mock.call('http://bar', '/home/stream/linkhub/20121201/bar', True),
+			mock.call('http://bar', '/home/stream/linkhub/20121201/uU_b', True),
 		]
 		today_mock.return_value = _dt.date(2012, 12, 1)
-		exists_mock.side_effect = lambda(path): path.find('(exists)') >= 0
+		exists_mock.side_effect = lambda(path): path.find('uU_exists') >= 0
 		self._mock_read_yaml_file('/path/of/rawlinks.yaml', rawlinks_yaml, exists_mock, open_mock)
 		self._load_context(linkmap_yaml=linkmap_yaml_before)
 
@@ -1009,14 +1151,17 @@ class _LinkhubTests(_ut.TestCase):
 		self._verify_download_file_calls(download_file_mock, expected_calls)
 		return
 
+	@patch('linkhub._genereate_uuid')
 	@patch('linkhub._today')
 	@patch('linkhub._download_file')
 	@patch('linkhub._export_linkmap')
 	@patch('__builtin__.open')
 	@patch('os.path.exists')
-	def _ut_load_rawlinks_not_override(
-			exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock):
-		rawlinks_yaml = """- name: foo (exists)
+	def test_load_rawlinks_override(
+			self, exists_mock, open_mock, export_linkmap_mock, download_file_mock, today_mock,
+			generate_uuid_mock):
+		generate_uuid_mock.side_effect = iter(['uU_exists_a', 'uU_b'])
+		rawlinks_yaml = """- name: foo
   url: http://foo
   auto:
 
@@ -1025,12 +1170,14 @@ class _LinkhubTests(_ut.TestCase):
   auto:
 """
 		linkmap_yaml_before = ''
-		linkmap_yaml_after = """- name: foo (exists)
+		linkmap_yaml_after = """- uuid: uU_exists_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [auto]
 
-- name: bar
+- uuid: uU_b
+  name: bar
   url: http://bar
   date: 2012-12-01
   tags: [auto]
@@ -1038,11 +1185,11 @@ class _LinkhubTests(_ut.TestCase):
 		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
 		expected_calls = [
 			# Will still try downloading the file
-			mock.call('http://foo', '/home/stream/linkhub/20121201/foo', True),
-			mock.call('http://bar', '/home/stream/linkhub/20121201/bar', True),
+			mock.call('http://foo', '/home/stream/linkhub/20121201/uU_exists_a', True),
+			mock.call('http://bar', '/home/stream/linkhub/20121201/uU_b', True),
 		]
 		today_mock.return_value = _dt.date(2012, 12, 1)
-		exists_mock.side_effect = lambda(path): path.find('(exists)') >= 0
+		exists_mock.side_effect = lambda(path): path.find('uU_exists') >= 0
 		self._mock_read_yaml_file('/path/of/rawlinks.yaml', rawlinks_yaml, exists_mock, open_mock)
 		self._load_context(linkmap_yaml=linkmap_yaml_before)
 
@@ -1054,70 +1201,187 @@ class _LinkhubTests(_ut.TestCase):
 
 
 	# test _map_to_local()
-	# TODO: add cases
+	@patch('linkhub._to_local_path')
+	@patch('os.path.exists')
+	def test_map_to_local_not_check(self, exists_mock, to_local_path_mock):
+		candidate = {'uuid' : 'uU_a'}
+		self._load_context(linkmap=[candidate])
+		exists_mock.return_value = True
+
+		_lhub._map_to_local(uuid='uU_a', check=False)
+
+		self.assertTrue(to_local_path_mock.call_args, mock.call(candidate))
+		exists_mock.assert_not_called()
+		return
+
+	@patch('linkhub._to_local_path')
+	@patch('os.path.exists')
+	def test_map_to_local_check(self, exists_mock, to_local_path_mock):
+		candidate = {'uuid' : 'uU_a'}
+		self._load_context(linkmap=[candidate])
+		exists_mock.return_value = True
+		to_local_path_mock.return_value = '/mock/local/path'
+
+		_lhub._map_to_local(uuid='uU_a', check=True)
+
+		self.assertTrue(to_local_path_mock.call_args, mock.call(candidate))
+		exists_mock.assert_any_call('/mock/local/path')
+		return
 
 
 	# test _make_link()
-	# TODO: add cases
+	@patch('linkhub._save_to_file')
+	def test_make_link(self, save_to_file_mock):
+		candidate = {'uuid' : 'uU_a'}
+		self._load_context(linkmap=[candidate])
+
+		_lhub._make_link('uU_a', None, None, '/dest/path')
+
+		self.assertTrue(save_to_file_mock.call_args, mock.call(
+					'uuid: uU_a\n', '/dest/path', True))
+		return
+
+
+	# test _read_link()
+	@patch('linkhub._map_to_local')
+	@patch('__builtin__.open')
+	@patch('os.path.exists')
+	def test_read_link(self, exists_mock, open_mock, map_to_local_mock):
+		link_yaml = """uuid: uU_a\n"""
+		self._mock_read_yaml_file('/path/to/link.ln', link_yaml, exists_mock, open_mock)
+
+		_lhub._read_link('/path/to/link.ln', True)
+
+		self.assertEqual(map_to_local_mock.call_args, mock.call(uuid='uU_a', check=True))
+		return
 
 
 	# test _make_copy()
-	# TODO: add cases
+	@patch('linkhub._copy_file')
+	def test_make_copy(self, make_copy_mock):
+		candidate = {'uuid' : 'uU_a', 'date' : _dt.date(2012, 1, 3)}
+		self._load_context(linkmap=[candidate])
+
+		_lhub._make_copy('uU_a', None, None, '/dest/path')
+
+		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
+		self.assertEqual(make_copy_mock.call_args, mock.call(
+					'/home/stream/linkhub/20120103/uU_a', '/dest/path', True))
+		return
 
 
-	# test _update_local()
-	# TODO: add cases
+	# test _update_from_url()
+	@patch('linkhub._download_file')
+	def test_update_from_url_auto(self, download_file_mock):
+		candidate = {
+			'uuid' : 'uU_a',
+			'url' : 'http://foo',
+			'date' : _dt.date(2012, 1, 3),
+		}
+		self._load_context(linkmap=[candidate])
+
+		self.assertEqual(0, _lhub._update_from_url('uU_a', None, None))
+
+		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
+		self.assertEqual(download_file_mock.call_args, mock.call(
+					'http://foo', '/home/stream/linkhub/20120103/uU_a', True))
+		return
+
+	@patch('linkhub._download_file')
+	def test_update_from_url_not_auto(self, download_file_mock):
+		candidate = {
+			'uuid' : 'uU_a',
+			'url' : 'http://foo',
+			'date' : _dt.date(2012, 1, 3),
+		}
+		self._load_context(linkmap=[candidate])
+
+		self.assertEqual(1, _lhub._update_from_url('uU_a', None, None))
+
+		download_file_mock.assert_not_called()
+		return
+
+	# test _update_from_local()
+	@patch('linkhub._copy_file')
+	@patch('os.path.exists')
+	def test_update_from_url_auto(self, exists_mock, copy_file_mock):
+		candidate = {
+			'uuid' : 'uU_a',
+			'url' : 'http://foo',
+			'date' : _dt.date(2012, 1, 3),
+		}
+		self._load_context(linkmap=[candidate])
+		exists_mock.return_value = True
+
+		self.assertEqual(0, _lhub._update_from_local('uU_a', None, None, '/local/source/path'))
+
+		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
+		self.assertEqual(copy_file_mock.call_args, mock.call(
+					'/local/source/path', '/home/stream/linkhub/20120103/uU_a', True))
+		return
 
 
 	# test _deprecate_duplicates()
 	@patch('linkhub._export_linkmap')
 	def test_deprecate_duplicates_name(self, export_linkmap_mock):
-		linkmap_yaml_before = """- name: foo
+		linkmap_yaml_before = """- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: null
 
-- name: foo
+- uuid: uU_b
+  name: foo
   url: http://bar
   date: 2012-12-02
   tags: null
 
-- name: bar
+- uuid: uU_c
+  name: bar
   url: http://foo
   date: 2012-12-03
   tags: null
 
-- name: foo
+- uuid: uU_d
+  name: foo
   url: http://foo
   date: 2012-12-04
   tags: null
 
-- name: bar
+- uuid: uU_e
+  name: bar
   url: http://bar
   date: 2012-12-05
   tags: null
 """
-		linkmap_yaml_after = """- name: foo
+		linkmap_yaml_after = """- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [deprecated]
+  successor: uU_d
 
-- name: foo
+- uuid: uU_b
+  name: foo
   url: http://bar
   date: 2012-12-02
   tags: [deprecated]
+  successor: uU_d
 
-- name: bar
+- uuid: uU_c
+  name: bar
   url: http://foo
   date: 2012-12-03
   tags: null
 
-- name: foo
+- uuid: uU_d
+  name: foo
   url: http://foo
   date: 2012-12-04
   tags: null
 
-- name: bar
+- uuid: uU_e
+  name: bar
   url: http://bar
   date: 2012-12-05
   tags: null
@@ -1130,52 +1394,64 @@ class _LinkhubTests(_ut.TestCase):
 
 	@patch('linkhub._export_linkmap')
 	def test_deprecate_duplicates_url(self, export_linkmap_mock):
-		linkmap_yaml_before = """- name: foo
+		linkmap_yaml_before = """- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: null
 
-- name: foo
+- uuid: uU_b
+  name: foo
   url: http://bar
   date: 2012-12-02
   tags: null
 
-- name: bar
+- uuid: uU_c
+  name: bar
   url: http://foo
   date: 2012-12-03
   tags: null
 
-- name: foo
+- uuid: uU_d
+  name: foo
   url: http://foo
   date: 2012-12-04
   tags: null
 
-- name: bar
+- uuid: uU_e
+  name: bar
   url: http://bar
   date: 2012-12-05
   tags: null
 """
-		linkmap_yaml_after = """- name: foo
+		linkmap_yaml_after = """- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [deprecated]
+  successor: uU_d
 
-- name: foo
+- uuid: uU_b
+  name: foo
   url: http://bar
   date: 2012-12-02
   tags: null
 
-- name: bar
+- uuid: uU_c
+  name: bar
   url: http://foo
   date: 2012-12-03
   tags: [deprecated]
+  successor: uU_d
 
-- name: foo
+- uuid: uU_d
+  name: foo
   url: http://foo
   date: 2012-12-04
   tags: null
 
-- name: bar
+- uuid: uU_e
+  name: bar
   url: http://bar
   date: 2012-12-05
   tags: null
@@ -1188,52 +1464,63 @@ class _LinkhubTests(_ut.TestCase):
 
 	@patch('linkhub._export_linkmap')
 	def test_deprecate_duplicates_name_url(self, export_linkmap_mock):
-		linkmap_yaml_before = """- name: foo
+		linkmap_yaml_before = """- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: null
 
-- name: foo
+- uuid: uU_b
+  name: foo
   url: http://bar
   date: 2012-12-02
   tags: null
 
-- name: bar
+- uuid: uU_c
+  name: bar
   url: http://foo
   date: 2012-12-03
   tags: null
 
-- name: foo
+- uuid: uU_d
+  name: foo
   url: http://foo
   date: 2012-12-04
   tags: null
 
-- name: bar
+- uuid: uU_e
+  name: bar
   url: http://bar
   date: 2012-12-05
   tags: null
 """
-		linkmap_yaml_after = """- name: foo
+		linkmap_yaml_after = """- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [deprecated]
+  successor: uU_d
 
-- name: foo
+- uuid: uU_b
+  name: foo
   url: http://bar
   date: 2012-12-02
   tags: null
 
-- name: bar
+- uuid: uU_c
+  name: bar
   url: http://foo
   date: 2012-12-03
   tags: null
 
-- name: foo
+- uuid: uU_d
+  name: foo
   url: http://foo
   date: 2012-12-04
   tags: null
 
-- name: bar
+- uuid: uU_e
+  name: bar
   url: http://bar
   date: 2012-12-05
   tags: null
@@ -1247,32 +1534,41 @@ class _LinkhubTests(_ut.TestCase):
 
 	@patch('linkhub._export_linkmap')
 	def test_deprecate_duplicates_deprecated(self, export_linkmap_mock):
-		linkmap_yaml_before = """- name: foo
+		linkmap_yaml_before = """- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [deprecated, auto]
+  successor: uU_b
 
-- name: foo
+- uuid: uU_b
+  name: foo
   url: http://bar
   date: 2012-12-02
   tags: null
 
-- name: foo
+- uuid: uU_c
+  name: foo
   url: http://baz
   date: 2012-12-03
   tags: null
 """
-		linkmap_yaml_after = """- name: foo
+		linkmap_yaml_after = """- uuid: uU_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [deprecated, auto]
+  successor: uU_b
 
-- name: foo
+- uuid: uU_b
+  name: foo
   url: http://bar
   date: 2012-12-02
   tags: [deprecated]
+  successor: uU_c
 
-- name: foo
+- uuid: uU_c
+  name: foo
   url: http://baz
   date: 2012-12-03
   tags: null
@@ -1289,32 +1585,36 @@ class _LinkhubTests(_ut.TestCase):
 	@patch('linkhub._remove_file')
 	@patch('os.path.exists')
 	def test_clean_deprecated(self, exists_mock, remove_file_mock):
-		linkmap_yaml = """- name: foo (exists)
+		linkmap_yaml = """- uuid: uU_exists_a
+  name: foo
   url: http://foo
   date: 2012-12-01
   tags: [deprecated, auto]
 
-- name: bar
+- uuid: uU_b
+  name: bar
   url: http://bar
   date: 2012-12-02
   tags: [deprecated]
 
-- name: baz
+- uuid: uU_c
+  name: baz
   url: http://baz
   date: 2012-12-03
   tags: null
 
-- name: bac (exists)
+- uuid: uU_exists_d
+  name: bac
   url: http://bac
   date: 2012-12-04
   tags: [deprecated]
 """
 		self.assertEqual(_lhub._LINKHUB_PATH, '/home/stream/linkhub')
 		expected_calls = [
-			mock.call('/home/stream/linkhub/20121201/foo (exists)', True),
-			mock.call('/home/stream/linkhub/20121204/bac (exists)', True),
+			mock.call('/home/stream/linkhub/20121201/uU_exists_a', True),
+			mock.call('/home/stream/linkhub/20121204/uU_exists_d', True),
 		]
-		exists_mock.side_effect = lambda(path): path.find('(exists)') >= 0
+		exists_mock.side_effect = lambda(path): path.find('uU_exists') >= 0
 		self._load_context(linkmap_yaml=linkmap_yaml)
 
 		_lhub._clean_deprecated()
@@ -1324,7 +1624,7 @@ class _LinkhubTests(_ut.TestCase):
 
 
 	# test _check_health()
-	# TODO: add cases
+	# TODO (p2): add cases
 
 
 	# test utilities
@@ -1332,7 +1632,8 @@ class _LinkhubTests(_ut.TestCase):
 		linkmap = _yaml.load(yaml)
 		return linkmap if linkmap is not None else []
 
-	def _load_context(self, linkmap=None, linkmap_yaml=None):
+	def _load_context(self, linkmap=None, linkmap_yaml=None, load_linkmap_table=True):
+		# TODO: mock _linkmap_table
 		self.assertTrue(linkmap is not None or linkmap_yaml is not None)
 		_lhub._FLAGS_dry_run = True
 		if linkmap is not None:
@@ -1341,6 +1642,8 @@ class _LinkhubTests(_ut.TestCase):
 		if linkmap_yaml is not None:
 			_lhub._linkmap_yaml = linkmap_yaml
 			_lhub._linkmap = self._linkmap_from_str(linkmap_yaml)
+		if load_linkmap_table:
+			_lhub._linkmap_table = {entry[_lhub._KEY_UUID]: entry for entry in _lhub._linkmap}
 		return
 
 	def _mock_read_yaml_file(self, path, yaml, exists_mock, open_mock):
@@ -1371,13 +1674,13 @@ class _LinkhubTests(_ut.TestCase):
 		open_mock.return_value = file_mock
 		return file_mock  # To verify the writing args
 
-	def _verify_info_outputs(self, info_mock, expected_lines):
-		_info('Expected: %s', expected_lines)
+	def _verify_info_calls(self, info_mock, expected_calls):
+		_info('Expected: %s', expected_calls)
 		_info('Actual: %s', info_mock.call_args_list)
 
-		self.assertEqual(len(expected_lines), len(info_mock.call_args_list))
-		for call_args, line in zip(info_mock.call_args_list, expected_lines):
-			self.assertEqual(mock.call(line), call_args)
+		self.assertEqual(len(expected_calls), len(info_mock.call_args_list))
+		for call, expected_call in zip(info_mock.call_args_list, expected_calls):
+			self.assertEqual(expected_call, call)
 		return
 
 	def _verify_print_entry_outputs(self, print_entry_mock, fd, expected_entries):
@@ -1425,4 +1728,4 @@ def _info(msg, args):
 	print >> sys.stderr, msg % args
 
 if __name__ == '__main__':
-	_ut.main(failfast=False)
+	_ut.main(failfast=True)

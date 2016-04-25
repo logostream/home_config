@@ -7,9 +7,10 @@
 #     :$ cat ~/log/mirror_sync.err # check error log
 #     :$ tail -f ~/log/mirror_sync.log # check log
 # Discription: sync whole repositories between mirrors
-echo deprecated and disable by default
+
+echo "This gonna to wipeout entire local data. Double check before comment out following line"
 exit 1
 
-SRC_PREFIX=stream@redland.cloudapp.net:$HOME
-DEST=$HOME
-rsync -e "ssh -p1109" -avvH --checksum --delete --exclude="cache/copy" --exclude="cache/github" "$SRC_PREFIX/data" "$SRC_PREFIX/cache" "$SRC_PREFIX/arch" "$DEST" > ~/log/mirror_sync.log 2> ~/log/mirror_sync.err
+SRC=stream@redland.cloudapp.net:$HOME/arch
+DEST=/archived/stream
+rsync -e "ssh -p1109" -avvH --checksum --delete "$SRC" "$DEST" 2>&1 | tee ~/log/mirror_sync.log

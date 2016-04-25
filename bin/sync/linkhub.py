@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # coding=ascii
 
-# TODO: imports order
+# TODO (style): imports order
+import argparse as _arg
 import os
 import os.path as _path
 import yaml as _yaml
@@ -14,6 +15,27 @@ import re
 import urllib2 as _url
 import urlparse as _urlp
 import difflib as _diff
+import base64 as _b64
+import uuid as _uuid
+
+# TODO (style): comments
+# TODO (p2): add tag web-only, ignore for map? (no, to explain)
+# TODO (p1): case insensitive
+# TODO (p3): ? cleanup orphan files, orphan file only happens when mannual edit the file date, or uuid
+# TODO (p1, obsolete): comand for rename file, name are free of change now
+#+ manually for non-auto downloadable file. (mv, deplicate mode)
+#+ TODO (p1): readlink/map fall back to web option
+#+ TODO (p2): readlink/map follow successor option (now just warn on deprecation)
+# TODO (p0, cc): add uuid, and successor:
+#+ * uuid for linkfile (free from rename)
+#+ * uuid for internal save (free from rename)
+#+ * uuid for internal refering
+#+ * check uuid-successor health
+#+ * provide map, ln, cp, update by uuid
+#+ * TODO (p2): print entry, print uuid in less verbose mode
+#* * some ut maybe uuid aware, some may not (minial principle)
+#+ ! uuid should independent, unique, unchange, can be delete but not recommended,
+#+ generating can retry
 
 
 _HOME = os.environ['HOME']
@@ -35,6 +57,12 @@ _TAG_DEPRECATED = 'deprecated'
 _TAG_AUTO = 'auto' # automatically downloadable
 
 # Entry properties
+# The data model of linkmap: uuid as primary key featured unchangibility, (name, url) as
+#+ secondary key featured readability, uuid can be view as internal id used within linkhub and link
+#+ files, while (name, url) can be view as readable "id" among non-deprecated entries
+# uuid used for refering in linkmap, saved file name in linkhub, link file. the purpose is to have
+#+ a unchanged (independent from name, url etc.), unique, compact property.
+_KEY_UUID = 'uuid'
 _KEY_NAME = 'name' # also used in rawlink
 _KEY_URL = 'url' # also used in rawlink
 _KEY_DATE = 'date'
@@ -42,11 +70,9 @@ _KEY_TAGS = 'tags'
 # Optional entry properties
 _KEY_COMMENT = 'comment'
 _KEY_ALT_URLS = 'alt_urls'
+_KEY_SUCCESSOR = 'successor'
 # rawlink optional properties
 _KEY_AUTO = 'auto'
-
-# TODO: ? cleanup orphan files
-# TODO: all properties have constant
 
 
 # ops
@@ -76,21 +102,25 @@ def _load_rawlinks(rawlinks_yaml_path, override):
 
 		for rawlink in rawlinks:
 			if _KEY_NAME not in rawlink:
-				filename = _filename_from_url(rawlink[_KEY_URL])
-				if filename:
-					_warn('Infer filename from url: %s.', filename)
+				name = _name_from_url(rawlink[_KEY_URL])
+				if name:
+					_info('Inferred name from url: %s.', name)
 				else:
-					_error('Infered filename is empty.')
+					_error('Inferred name is empty.')
 					continue
-				rawlink[_KEY_NAME] = filename
+				rawlink[_KEY_NAME] = name
 
-			candidates = _map_to_candidates(
-					_linkmap, rawlink[_KEY_NAME], rawlink[_KEY_URL], check_unique=False)
-			if candidates and candidates[0].date == _today():
-				_info('Links alread added into linkmap, ignore current one.')
+			candidates = _map_to_candidates(_linkmap,
+					name=rawlink[_KEY_NAME], url=rawlink[_KEY_URL], check_unique=False)
+			if candidates and candidates[0][_KEY_DATE] == _today():
+				_warn('Links alread added into linkmap, use existing one:')
+				_print_entry(sys.stderr, candidates[0])
 				entry = candidates[0]
 			else:
-				entry = _new_entry(rawlink)
+				if candidates:
+					_warn('Exists another entry with same name and url:')
+					_print_entry(sys.stderr, candidates[0])
+				entry = _new_entry(rawlink, _linkmap_table)
 				_info('New entry:')
 				_print_entry(sys.stderr, entry)
 				_info()
@@ -110,35 +140,47 @@ def _load_rawlinks(rawlinks_yaml_path, override):
 			_download_file(entry[_KEY_URL], _to_local_path(entry), _FLAGS_dry_run)
 	return 0
 
-def _map_to_local(name, url):
-	candidate = _map_to_candidates(_linkmap, name, url)[0]
+def _map_to_local(uuid=None, name=None, url=None, check=False):
+	candidate = _map_to_candidates(_linkmap, _linkmap_table, uuid, name, url)[0]
 	_print_entry(sys.stderr, candidate)
 
 	local_path = _to_local_path(candidate)
-	assert _path.exists(local_path)
+	if check:
+		assert _path.exists(local_path)
 	print local_path
 	return 0
 
-def _make_link(name, url, dest_path):
-	candidate = _map_to_candidates(_linkmap, name, url)[0]
+def _make_link(uuid, name, url, dest_path):
+	# TODO (p1): support dest_dir
+	candidate = _map_to_candidates(_linkmap, _linkmap_table, uuid, name, url)[0]
 	_info('Make link for entry:')
 	_print_entry(sys.stderr, candidate)
 
-	link_yaml = _build_link_yaml(name, url)
+	link_yaml = _build_link_yaml(candidate)
 	_save_to_file(link_yaml, dest_path, _FLAGS_dry_run)
 	return 0
 
-def _make_copy(name, url, dest_path):
-	candidate = _map_to_candidates(_linkmap, name, url)[0]
+def _read_link(link_path, check):
+	# TODO (p3): get url mode
+	with open(link_path, 'r') as link_file:
+		link_yaml = ''.join(link_file.readlines())
+		link = _yaml.load(link_yaml)
+		uuid = link[_KEY_UUID]
+		_info('Link uuid: %s.', uuid)
+		return _map_to_local(uuid=uuid, check=check)
+
+def _make_copy(uuid, name, url, dest_path):
+	# TODO (p1): support dest_dir
+	candidate = _map_to_candidates(_linkmap, _linkmap_table, uuid, name, url)[0]
 	_info('Make copy for entry:')
 	_print_entry(sys.stderr, candidate)
 
 	local_path = _to_local_path(candidate)
-	_copy_to_file(local_path, dest_path, _FLAGS_dry_run)
+	_copy_file(local_path, dest_path, _FLAGS_dry_run)
 	return 0
 
-def _update_local(name, url):
-	candidate = _map_to_candidates(_linkmap, name, url)[0]
+def _update_from_url(uuid, name, url):
+	candidate = _map_to_candidates(_linkmap, _linkmap_table, uuid, name, url)[0]
 	_print_entry(sys.stderr, candidate)
 
 	if not _tagged_as(candidate, _TAG_AUTO):
@@ -149,12 +191,27 @@ def _update_local(name, url):
 	if not _path.exists(local_path):
 		_warn('Original local file not exists.')
 
-	_download_file(candidate.url, local_path, _FLAGS_dry_run)
+	_download_file(candidate[_KEY_URL], local_path, _FLAGS_dry_run)
+	return 0
+
+def _update_from_local(uuid, name, url, local_source):
+	assert _path.exists(local_source)
+
+	candidate = _map_to_candidates(_linkmap, _linkmap_table, uuid, name, url)[0]
+	_print_entry(sys.stderr, candidate)
+
+	if not _tagged_as(candidate, _TAG_AUTO):
+		_warn('This file can be download from url.')
+
+	local_path = _to_local_path(candidate)
+	if not _path.exists(local_path):
+		_warn('Original local file not exists.')
+
+	_copy_file(local_source, local_path, _FLAGS_dry_run)
 	return 0
 
 def _deprecate_duplicates(name, url):
-	assert name is not None or url is not None
-	candidates = _map_to_candidates(_linkmap, name, url, check_unique=False)
+	candidates = _map_to_candidates(_linkmap, name=name, url=url, check_unique=False)
 
 	if not candidates:
 		_warn('No matched enties.')
@@ -174,13 +231,14 @@ def _deprecate_duplicates(name, url):
 		_print_entry(sys.stderr, candidate)
 		_info()
 		_tag_as(candidate, _TAG_DEPRECATED)
+		assert _KEY_SUCCESSOR not in candidate
+		candidate[_KEY_SUCCESSOR] = latest[_KEY_UUID]
 
 	_diff_linkmap(_linkmap, _linkmap_yaml)
 	_export_linkmap(_linkmap, _FLAGS_dry_run)
 	return
 
 def _clean_deprecated():
-	latest = None
 	candidates = [entry for entry in _linkmap if _tagged_as(entry, _TAG_DEPRECATED)
 			and _path.exists(_to_local_path(entry))]
 
@@ -199,13 +257,21 @@ def _check_health():
 	healthy = _check_no_duplicates(_linkmap)
 	healthy &= _check_list_order(_linkmap)
 	healthy &= _check_local_files(_linkmap)
-	print 'Healty.' if healty else 'See logs for potential problems.'
+	healthy &= _check_successor(_linkmap, _linkmap_table)
+	print 'Healthy.' if healthy else 'See logs for potential problems.'
 	return 0 if healthy else 1
 
 
 # support functions
-def _map_to_candidates(linkmap, name, url, check_unique=True):
-	assert name is not None or url is not None
+def _map_to_candidates(linkmap=None, linkmap_table=None, uuid=None, name=None, url=None,
+		check_unique=True):
+	assert uuid is not None or name is not None or url is not None
+
+	if uuid is not None:
+		if name is not None or url is not None:
+			_warn('Ignores name or url when uuid is given.')
+		return [linkmap_table[uuid]]
+
 	candidates = sorted([entry for entry in linkmap if not _tagged_as(entry, _TAG_DEPRECATED)
 				and (name is None or entry[_KEY_NAME] == name)
 				and (url is None or entry[_KEY_URL] == url)],
@@ -218,15 +284,22 @@ def _map_to_candidates(linkmap, name, url, check_unique=True):
 	return candidates
 
 def _build_link_yaml(entry):
-	return 'name: %s\nurl: %s' % (entry[_KEY_NAME], entry[_KEY_URL])
+	return 'uuid: %s\n' % (entry[_KEY_UUID])
 
 def _check_no_duplicates(linkmap):
+	duplicates_by_uuid = _duplicated_keys([(entry[_KEY_UUID], entry) for entry in linkmap])
 	duplicates_by_id = _duplicated_keys([((entry[_KEY_NAME], entry[_KEY_URL]), entry)
 			for entry in linkmap if not _tagged_as(entry, _TAG_DEPRECATED)])
 	duplicates_by_name = _duplicated_keys([(entry[_KEY_NAME], entry) for entry in linkmap
 			if not _tagged_as(entry, _TAG_DEPRECATED)])
 	duplicates_by_url = _duplicated_keys([(entry[_KEY_URL], entry) for entry in linkmap
 			if not _tagged_as(entry, _TAG_DEPRECATED)])
+
+	if duplicates_by_uuid:
+		_error('Found duplicated uuid:')
+		for uuid in duplicates_by_uuid:
+			_warn(uuid)
+		_warn('')
 
 	if duplicates_by_id:
 		_warn('Found duplicated ids (name, url):')
@@ -245,7 +318,8 @@ def _check_no_duplicates(linkmap):
 		for url in duplicates_by_url:
 			_warn(url)
 		_warn('')
-	return not duplicates_by_id and not duplicates_by_name and not duplicates_by_url
+	return (not duplicates_by_uuid and not duplicates_by_id
+			and not duplicates_by_name and not duplicates_by_url)
 
 def _check_list_order(linkmap):
 	max_date = None
@@ -277,6 +351,40 @@ def _check_local_files(linkmap):
 			_info()
 	return not undownloaded and not uncleaned
 
+def _check_successor(linkmap, linkmap_table):
+	# TODO (p5): cycular checking
+	no_successor = []
+	non_deprecated = []
+	invalid_successor = []
+	for entry in linkmap:
+		deprecated = _tagged_as(entry, _TAG_DEPRECATED)
+		has_successor = _KEY_SUCCESSOR in entry
+		if deprecated != has_successor:
+			if deprecated:
+				no_successor.append(entry)
+			else:
+				non_deprecated.append(entry)
+		if has_successor and entry[_KEY_SUCCESSOR] not in linkmap_table:
+			invalid_successor.append(entry)
+	if no_successor:
+		_warn('Found deprecated entries with no successor:')
+		for entry in no_successor:
+			_print_entry(sys.stderr, entry, print_local_path=False)
+			_info()
+
+	if non_deprecated:
+		_warn('Found non-deprecated entries has successor:')
+		for entry in non_deprecated:
+			_print_entry(sys.stderr, entry, print_local_path=False)
+			_info()
+
+	if invalid_successor:
+		_warn('Found invalid successor:')
+		for entry in invalid_successor:
+			_print_entry(sys.stderr, entry, print_local_path=False)
+			_info()
+	return not no_successor and not non_deprecated and not invalid_successor
+
 
 # linkmap utilities
 def _load_linkmap():
@@ -287,18 +395,24 @@ def _load_linkmap():
 		if linkmap is None:
 			_warn('Current linkmap is empty.')
 			linkmap = []
-		return linkmap, linkmap_yaml
+		linkmap_table = {entry[_KEY_UUID]: entry for entry in linkmap}
+		if len(linkmap_table) != len(linkmap):
+			_warn('Has duplicate keys in linkmap.')
+		return linkmap, linkmap_table, linkmap_yaml
 
 def _diff_linkmap(linkmap, linkmap_yaml):
 	# differ the original yaml text with current yaml object to see the changes
+	_info('Diff linkmap.')
+
 	new_linkmap_yaml = _format_linkmap(linkmap)
 	for line in _diff.unified_diff(linkmap_yaml.split('\n'), new_linkmap_yaml.split('\n'),
 			fromfile='before.yaml', tofile='after.yaml'):
-		_info(line.rstrip('\n'))
+		_info('%s', line.rstrip('\n'))
 	return
 
 def _export_linkmap(linkmap, dry_run):
 	_info('Exporting linkmap.')
+
 	new_linkmap_yaml = _format_linkmap(linkmap)
 	_save_to_file(new_linkmap_yaml, _LINKMAP_PATH, dry_run)
 	return
@@ -353,8 +467,9 @@ _yaml.add_representer(_LiteralUnicode, literal_unicode_representer)
 def _save_to_file(text, dest_path, dry_run):
 	_info('Saving file to %s.', dest_path)
 
-	if not _path.exists(_path.dirname(dest_path)):
-		_error('Destination folder %s not exists.', _path.dirname(dest_path))
+	dest_dir = _path.dirname(dest_path)
+	if len(dest_dir) and not _path.exists(dest_dir):
+		_error('Destination folder %s not exists.', dest_dir)
 		assert False
 	if _path.exists(dest_path):
 		_warn('Destination %s already exists.', dest_path)
@@ -367,12 +482,14 @@ def _save_to_file(text, dest_path, dry_run):
 		_info('Dry run mode.')
 	return
 
-def _copy_to_file(src_path, dest_path, dry_run):
+def _copy_file(src_path, dest_path, dry_run):
 	_info('Copying file from %s to %s.', src_path, dest_path)
 
 	assert _path.exists(src_path)
-	if not _path.exists(_path.dirname(dest_path)):
-		_warn('Destination folder %s not exists.', dest_path)
+
+	dest_dir = _path.dirname(dest_path)
+	if len(dest_dir) and not _path.exists(dest_dir):
+		_warn('Destination folder %s not exists.', dest_dir)
 	if _path.exists(dest_path):
 		_warn('Destination %s already exists.', dest_path)
 
@@ -396,8 +513,9 @@ def _remove_file(path, dry_run):
 
 def _download_file(url, local_path, dry_run):
 	_info('Downloading resource from %s to %s.', url, local_path)
+
 	local_dir = _path.dirname(local_path)
-	if not _path.exists(local_dir):
+	if len(local_dir) and not _path.exists(local_dir):
 		if not dry_run:
 			_warn('Creating Local dir %s.', local_dir)
 			_sp.call(['mkdir', '-p', local_dir])
@@ -408,7 +526,7 @@ def _download_file(url, local_path, dry_run):
 		tmp_dir = _tf.mkdtemp(_TEMP_DIR_PREFIX)
 		tmp_path = _path.join(tmp_dir, 'downloading')
 		_info('Downloading to tmp file %s.', tmp_path)
-		_sp.call(['wget', '-o', tmp_path, url])
+		_sp.call(['wget', '-O', tmp_path, url])
 		_sp.call(['mv', tmp_path, local_path])
 		_sp.call(['rmdir', tmp_dir])
 		_info('Done.')
@@ -418,19 +536,29 @@ def _download_file(url, local_path, dry_run):
 
 
 # common utilities
+def _genereate_uuid(linkmap_table):
+	# TODO (p3): ut
+	# Add retries to ensure no exception happend in no-dry_run mode
+	for i in range(10):
+		uuid = _b64.urlsafe_b64encode(_uuid.uuid4().bytes).rstrip('=\n')
+		if uuid not in linkmap_table:
+			return uuid
+		_warn('Failed to generate unique uuid for %d times.' % (i + 1))
+	assert False
+
 def _today():
 	return _dt.date.today()
 
-def _filename_from_url(url):
-	_info('Infer file name from url: %s.', url)
+def _name_from_url(url):
+	_info('Infer name from url: %s.', url)
 	path = _urlp.urlsplit(url).path
-	filename = _path.basename(path)
-	_info('Raw file name: %s.', filename)
-	filename = _url.unquote(filename)
-	_info('Unquoted file name: %s.', filename)
-	# TDOD: https://github.com/django/django/blob/master/django/utils/text.py
-	_info('Sanitized file name: %s.', filename)
-	return filename
+	name = _path.basename(path)
+	_info('Raw name: %s.', name)
+	name = _url.unquote(name)
+	_info('Unquoted name: %s.', name)
+	# TODO (p2): https://github.com/django/django/blob/master/django/utils/text.py
+	_info('Sanitized name: %s.', name)
+	return name
 
 def _match(text, keyword, match_mode):
 	if match_mode == _MODE_EQUALS:
@@ -438,7 +566,7 @@ def _match(text, keyword, match_mode):
 	if match_mode == _MODE_CONTAINS:
 		return text.find(keyword) >= 0
 	if match_mode == _MODE_REGEX:
-		return re.match(keyword, text)
+		return re.search(keyword, text)
 	_error('Not a valid match_mode: %s.', match_mode)
 	assert False
 
@@ -459,16 +587,16 @@ def _duplicated_keys(pairs):
 def _to_local_path(entry):
 	return '%s/%s/%s' % (
 			_LINKHUB_PATH, _dt.datetime.strftime(_get_date(entry), _DATE_DIR_FORMAT),
-			entry[_KEY_NAME])
+			entry[_KEY_UUID])
 
 def _get_date(entry):
 	return entry[_KEY_DATE]
 
 def _tagged_as(entry, tag):
 	if _KEY_TAGS not in entry:
-		_warn('Entry miss "tags" property.')
+		_warn('Entry miss "tags" property. In UT?')
 		return False
-	return entry[_KEY_TAGS] and tag in entry[_KEY_TAGS]
+	return entry[_KEY_TAGS] is not None and tag in entry[_KEY_TAGS]
 
 def _tag_as(entry, tag):
 	if entry[_KEY_TAGS] is None:
@@ -479,8 +607,9 @@ def _tag_as(entry, tag):
 		entry[_KEY_TAGS].append(tag)
 	return
 
-def _new_entry(rawlink):
+def _new_entry(rawlink, linkmap_table):
 	entry = _col.OrderedDict([
+			(_KEY_UUID, _genereate_uuid(linkmap_table)),
 			(_KEY_NAME, rawlink[_KEY_NAME]),
 			(_KEY_URL, rawlink[_KEY_URL]),
 			(_KEY_DATE, _today()),
@@ -513,39 +642,150 @@ def _error(msg, *args):
 
 if __name__ == '__main__':
 	global _linkmap_yaml # original yaml text
-	global _linkmap # parsed yaml object
+	global _linkmap # parsed linkmap entries
+	global _linkmap_table # dict from uuid to entries
 
-	parser = argparse.ArgumentParser(prog='lhub');
-	parser.add_argument('-n', '--dry_run', help='Dry run mode.', action='store_true');
+	parser = _arg.ArgumentParser(prog='lhub')
+	parser.add_argument('-n', '--dry_run', help='Dry run mode.', action='store_true')
 
-	subparsers = parser.add_subparsers(title='action');
+	subparsers = parser.add_subparsers(title='action')
 
 	# find
 	parser_find = subparsers.add_parser(
 			'find', help='Finds map entries by matching attributes like url, name etc.'
-			+ 'listed in date decrease order');
-	parser_find.add_argument('-a', '--name', nargs=1, help='name');
-	parser_find.add_argument('-u', '--url', nargs=1, help='url');
-	parser_find.add_argument('-m', '--mode', nargs=1,
-			help='Search mode: match regex, substring, whole string (default)');
+			+ 'listed in date decrease order.')
+	parser_find.add_argument('-k', '--name', help='name')
+	parser_find.add_argument('-u', '--url', help='url')
+	parser_find.add_argument('-m', '--match_mode', default=_MODE_CONTAINS,
+			help='Search mode: match regex, whole string, substring (default).')
+	parser_find.add_argument('-U', '--include_alt_urls', action='store_true',
+			help='Include alt_urls as the url query search for, used with -u.')
+	parser_find.add_argument('-d', '--include_deprecated', action='store_true',
+			help='Include deprecated entries.')
 	parser_find.set_defaults(action='find'); # action=find
 
 	# load
-	parser_load = subparsers.add_parser(
-			'load', help='Load and add new enties');
+	parser_load = subparsers.add_parser('load', help='Load rawinks and add new enties.')
+	parser_load.add_argument('rawlinks_yaml_path', metavar='PATH', help='Path of rawlinks.yaml.')
+	parser_load.add_argument('-o', '--override', action='store_true',
+			help='Override existing files in case of auto downloading.')
+	parser_load.set_defaults(action='load'); # action=load
 
 	# map: id -> local url
-	parser_map
+	parser_map = subparsers.add_parser('map', help='Map entry to the location of local file.')
+	parser_map.add_argument('-i', '--uuid', help='uuid')
+	parser_map.add_argument('-k', '--name', help='name')
+	parser_map.add_argument('-u', '--url', help='url')
+	parser_map.add_argument('-c', '--check', action='store_true',
+			help='Need to check if local file exists.')
+	# TODO(p5): more friendly return for no candidte or 2+ candidates
+	parser_map.set_defaults(action='map'); # action=map
 
-	# gc
-	parser_gc
+	# link: id -> destination
+	parser_link = subparsers.add_parser('ln', help='Make a link file to destination.')
+	parser_link.add_argument('-i', '--uuid', help='uuid')
+	parser_link.add_argument('-k', '--name', help='name')
+	parser_link.add_argument('-u', '--url', help='url')
+	parser_link.add_argument('dest_path', metavar='DEST', help='Destination path')
+	parser_link.set_defaults(action='ln'); # action=link
+
+	# readlink: link -> destination
+	parser_readlink = subparsers.add_parser('readlink', help='Make a link file to destination.')
+	parser_readlink.add_argument('link_path', metavar='LINK', help='Path of link file')
+	parser_readlink.add_argument('-c', '--check', action='store_true',
+			help='Need to check if local file exists.')
+	# TODO(p0): read url option
+	parser_readlink.set_defaults(action='readlink'); # action=link
+
+	# copy: id -> destination
+	parser_copy = subparsers.add_parser('cp', help='Make a copy to destination.')
+	parser_copy.add_argument('-i', '--uuid', help='uuid')
+	parser_copy.add_argument('-k', '--name', help='name')
+	parser_copy.add_argument('-u', '--url', help='url')
+	parser_copy.add_argument('dest_path', metavar='DEST', help='Destination path.')
+	parser_copy.set_defaults(action='cp'); # action=cp
+
+	# update: re-download by id
+	parser_update = subparsers.add_parser('update', help='Re-download entry.')
+	parser_update.add_argument('-i', '--uuid', help='uuid')
+	parser_update.add_argument('-k', '--name', help='name')
+	parser_update.add_argument('-u', '--url', help='url')
+	parser_update.add_argument('-l', '--local', help='Local source')
+	parser_update.set_defaults(action='update'); # action=update
+
+	# deprecate
+	parser_deprecate = subparsers.add_parser('gc', help='Deprecates duplicated entries.')
+	# TODO (p1): case insensitive
+	parser_deprecate.add_argument('-k', '--name', help='name')
+	parser_deprecate.add_argument('-u', '--url', help='url')
+	parser_deprecate.set_defaults(action='gc'); # action=deprecate
+
+	# clean
+	parser_clean = subparsers.add_parser('clean', help='Clean files of deprecated items.')
+	parser_clean.set_defaults(action='clean'); # action=clean
+
+	# check
+	parser_check = subparsers.add_parser('check', help='Check health of linkhub.')
+	parser_check.set_defaults(action='check'); # action=check
 
 	args = parser.parse_args();
-	{
-		'status': cachefile_status_query,
-		'agg': aggregate_update,
-		'cache-commit': cache_commit_update,
-		'restore': cache_restore_miss_update,
-		'entryfile': entryfile_sync_update,
-		'git-commit': git_commit_update,
-	}[args.action](args);
+	_linkmap, _linkmap_table, _linkmap_yaml = _load_linkmap()
+	_FLAGS_dry_run = args.dry_run
+	exit_code = 0
+	if args.action == 'find':
+		if args.include_alt_urls and args.url is None:
+			_warn('Ignores --include_alt_urls when --url not specified.')
+		exit_code = _find(
+				args.name, args.url, args.match_mode,
+				args.include_alt_urls, args.include_deprecated)
+	elif args.action == 'load':
+		# import
+		exit_code = _load_rawlinks(args.rawlinks_yaml_path, args.override)
+	elif args.action == 'map':
+		assert args.uuid is not None or args.name is not None or args.url is not None
+		if args.uuid is not None and (args.name is not None or args.url is not None):
+			_warn('Ignores --name and --url when --uuid is specified')
+			args.name, args.url = None, None
+		exit_code = _map_to_local(args.uuid, args.name, args.url, args.check)
+	elif args.action == 'ln':
+		# export
+		assert args.uuid is not None or args.name is not None or args.url is not None
+		if args.uuid is not None and (args.name is not None or args.url is not None):
+			_warn('Ignores --name and --url when --uuid is specified')
+			args.name, args.url = None, None
+		exit_code = _make_link(args.uuid, args.name, args.url, args.dest_path)
+	elif args.action == 'readlink':
+		assert args.link_path is not None
+		exit_code = _read_link(args.link_path, args.check)
+	elif args.action == 'cp':
+		# export
+		assert args.uuid is not None or args.name is not None or args.url is not None
+		if args.uuid is not None and (args.name is not None or args.url is not None):
+			_warn('Ignores --name and --url when --uuid is specified')
+			args.name, args.url = None, None
+		exit_code = _make_copy(args.uuid, args.name, args.url, args.dest_path)
+	elif args.action == 'update':
+		# import
+		# TODO (p4): update all (repair all)
+		# TODO (p3): update by date
+		assert args.uuid is not None or args.name is not None or args.url is not None
+		if args.uuid is not None and (args.name is not None or args.url is not None):
+			_warn('Ignores --name and --url when --uuid is specified')
+			args.name, args.url = None, None
+		if args.local is not None:
+			exit_code = _update_from_local(args.uuid, args.name, args.url, args.local)
+		else:
+			exit_code = _update_from_url(args.uuid, args.name, args.url)
+	elif args.action == 'gc':
+		assert args.name is not None or args.url is not None
+		exit_code = _deprecate_duplicates(args.name, args.url)
+	elif args.action == 'clean':
+		exit_code = _clean_deprecated()
+	elif args.action == 'check':
+		exit_code = _check_health()
+	# TODO (p2): add uuid generation command for manually adding
+	else:
+		_error('Invalid action.')
+		assert False
+	sys.exit(exit_code)
+	pass

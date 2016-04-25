@@ -1,21 +1,79 @@
---- /etc/openvpn/server.conf~	2014-10-26 00:24:22.778461386 +0000
-+++ /etc/openvpn/server.conf	2014-10-26 00:17:56.666463750 +0000
-@@ -76,8 +76,8 @@
- # OpenVPN can also use a PKCS #12 formatted key file
- # (see "pkcs12" directive in man page).
- ca ca.crt
--cert server.crt
--key server.key  # This file should be kept secret
-+cert server_foo.crt
-+key server_foo.key  # This file should be kept secret
+--- server.conf~	2015-12-05 12:06:09.326737273 -0800
++++ server.conf	2015-12-05 12:04:55.054734477 -0800
+@@ -84,16 +84,16 @@
+ #   openssl dhparam -out dh1024.pem 1024
+ # Substitute 2048 for 1024 if you are using
+ # 2048 bit keys. 
+-dh dh1024.pem
++dh dh2048.pem
  
- # Diffie hellman parameters.
- # Generate your own with:
-@@ -135,6 +135,7 @@
+ # Configure server mode and supply a VPN subnet
+ # for OpenVPN to draw client addresses from.
+-# The server will take 10.8.0.1 for itself,
++# The server will take 10.10.0.1 for itself,
+ # the rest will be made available to clients.
+ # Each client will be able to reach the server
+-# on 10.8.0.1. Comment this line out if you are
++# on 10.10.0.1. Comment this line out if you are
+ # ethernet bridging. See the man page for more info.
+-server 10.8.0.0 255.255.255.0
++server 10.10.0.0 255.255.255.0
+ 
+ # Maintain a record of client <-> virtual IP address
+ # associations in this file.  If OpenVPN goes down or
+@@ -107,12 +107,12 @@
+ # to bridge the TAP interface with the ethernet
+ # NIC interface.  Then you must manually set the
+ # IP/netmask on the bridge interface, here we
+-# assume 10.8.0.4/255.255.255.0.  Finally we
++# assume 10.10.0.4/255.255.255.0.  Finally we
+ # must set aside an IP range in this subnet
+-# (start=10.8.0.50 end=10.8.0.100) to allocate
++# (start=10.10.0.50 end=10.10.0.100) to allocate
+ # to connecting clients.  Leave this line commented
+ # out unless you are ethernet bridging.
+-;server-bridge 10.8.0.4 255.255.255.0 10.8.0.50 10.8.0.100
++;server-bridge 10.10.0.4 255.255.255.0 10.10.0.50 10.10.0.100
+ 
+ # Configure server mode for ethernet bridging
+ # using a DHCP-proxy, where clients talk
+@@ -131,10 +131,11 @@
+ # the server.  Remember that these
+ # private subnets will also need
+ # to know to route the OpenVPN client
+-# address pool (10.8.0.0/255.255.255.0)
++# address pool (10.10.0.0/255.255.255.0)
  # back to the OpenVPN server.
  ;push "route 192.168.10.0 255.255.255.0"
  ;push "route 192.168.20.0 255.255.255.0"
-+push "route 10.8.0.0 255.255.0.0"
++push "route 10.10.0.0 255.255.0.0"
  
  # To assign specific IP addresses to specific
  # clients or if a connecting client has a private
+@@ -157,12 +158,12 @@
+ # using "dev tun" and "server" directives.
+ 
+ # EXAMPLE: Suppose you want to give
+-# Thelonious a fixed VPN IP address of 10.9.0.1.
++# Thelonious a fixed VPN IP address of 10.11.0.1.
+ # First uncomment out these lines:
+ ;client-config-dir ccd
+-;route 10.9.0.0 255.255.255.252
++;route 10.11.0.0 255.255.255.252
+ # Then add this line to ccd/Thelonious:
+-#   ifconfig-push 10.9.0.1 10.9.0.2
++#   ifconfig-push 10.11.0.1 10.11.0.2
+ 
+ # Suppose that you want to enable different
+ # firewall access policies for different groups
+@@ -259,8 +260,8 @@
+ #
+ # You can uncomment this out on
+ # non-Windows systems.
+-;user nobody
+-;group nogroup
++user nobody
++group nogroup
+ 
+ # The persist options will try to avoid
+ # accessing certain resources on restart

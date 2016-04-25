@@ -11,4 +11,10 @@ if [ ! -d "$src/" ]; then
 fi
 
 # by default we don't use --checksum
-rsync -av --delete --include="/data/***" --include="/cache/***" --include="/pushub/***" --exclude="*" $rsync_args "$src/" "$dest"
+rsync -av --delete --include="/data/***" --include="/cache/***" \
+	--include="/pushub/***" --include="/linkhub/***" \
+	`# github except repos with arch backup` \
+	--exclude="github/scrapbook" --exclude="github/notes" --exclude="github/home_config" \
+	--include="/github/***" \
+	`# exclude misc` \
+	--exclude="*" $rsync_args "$src/" "$dest"

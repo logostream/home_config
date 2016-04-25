@@ -8,14 +8,28 @@ import zipfile as _zip;
 import urllib;
 
 HASXWIN = True;
-CMD_XOPEN = 'open'; # use gnome-open for ubuntu
-REPO_HOME = '/var/homedump';
+HOME = os.environ['HOME']
+REPO_HOME = HOME;
 DATA_HOME = _path.join(REPO_HOME, 'data');
 CACHE_HOME = _path.join(REPO_HOME, 'cache');
 CLASSIC_HOME = _path.join(REPO_HOME, 'arch/classic');
 THUMBNAIL_TMPFILE = '/tmp/topen_thumbnail.jpg';
+CMD_XOPEN = 'xdg-open'; # use xdg-open for ubuntu
+LINKHUB_CMD = '%s/bin/sync/linkhub.py' % HOME
+LINK_EXT = '.ln'
 
-def maffurl (maffpath):
+def uri_ext(uri):
+	extbeg = uri.lower().rfind('.');
+	return '' if extbeg < 0 else uri[extbeg:];
+
+# Detect mimetype, useful to determine file type without file extension
+def mimetype(path):
+	pipe = _sp.Popen(['file', '-b', '--mime-type', path], stdout=_sp.PIPE)
+	if pipe.wait() != 0:
+		return ''
+	return pipe.stdout.read().rstrip('\n')
+
+def maffurl(maffpath):
 	got = [];
 	with _zip.ZipFile(maffpath) as maffzip:
 		for filename in maffzip.namelist():
@@ -28,7 +42,7 @@ def maffurl (maffpath):
 						got.append(match.group(1));
 	return got;
 
-def normalize(uri):
+def normalize(uri, direct):
 	# support protocol:
 	# * repo://$path -> $CACHE_HOME/$path # todo fallback logic from DATA_HOME to CACHE_HOME
 	# * classic://$path -> $CLASSIC_HOME/$path
@@ -42,40 +56,73 @@ def normalize(uri):
 	res = re.match('file://(/.*)', uri, re.I);
 	if res:
 		return urllib.unquote(res.group(1));
+
+	# Query for linkhub cache (only for http or https)
+	if not direct and re.match('https?://.*', uri, re.I):
+		local = linkhub_map(uri)
+		if local:
+			return local;
 	return uri;
 
+def linkhub_map(uri):
+	pipe = _sp.Popen([LINKHUB_CMD, 'map', '-u', uri], stdout=_sp.PIPE)
+	if pipe.wait() != 0:
+		return uri
+	return pipe.stdout.read().rstrip('\n')
+
+def readlink(uri):
+	"""Parse link in the case uri is a local linkhub link file (*.ln)."""
+	# TODO: Resolve problem of opening PPT
+	if re.match('[a-z]://.*', uri, re.I):
+		return uri
+	if not uri_ext(uri) == LINK_EXT:
+		return uri
+	pipe = _sp.Popen([LINKHUB_CMD, 'readlink', uri], stdout=_sp.PIPE)
+	if pipe.wait() != 0:
+		return uri
+	return pipe.stdout.read().rstrip('\n')
+
+def xwin_open(url):
+	# Fix for opening ppt without file extension
+	if mimetype(url) == 'application/vnd.ms-powerpoint':
+		_sp.Popen(['libreoffice', '--view', url])
+		return;
+	_sp.Popen([CMD_XOPEN, uri]);
+	return;
+
 def tmux_open(uri, moretext):
+	""" Open file in tmux hosting terminal. """
+	# Open url in w3m browser
 	if (uri.lower().startswith('http://')
 			or uri.lower().startswith('https://')
-			or uri.lower().endswith('.htm')
-			or uri.lower().endswith('.html')
-			):
+			or uri_ext(uri) in ('.htm', '.html')):
 		_sp.Popen(['tmux', 'split-window', '-h', "w3m '%s'" % uri]);
 		return;
-	if not moretext and uri.lower().endswith('.pdf'):
+	# Open pdf file
+	if not moretext and (uri_ext(uri) == '.pdf' or mimetype(uri) == 'application/pdf'):
 		# assert not _path.exists(THUMBNAIL_TMPFILE);
 		_sp.Popen(['convert', '-thumbnail', 'x300', '-background', 'white', '-alpha', 'remove', '%s[0]' % uri, THUMBNAIL_TMPFILE]).wait();
 		_sp.Popen(['tmux', 'split-window', '-h', "tiv -r 0.4 -h 52 -p '%s'" % THUMBNAIL_TMPFILE]).wait();
 		# os.remove(THUMBNAIL_TMPFILE); # looks like it doesn't work
 		return;
+	# Open image file
 	if not moretext and (
-			uri.lower().endswith('.jpg')
-			or uri.lower().endswith('.jpeg')
-			or uri.lower().endswith('.png')
-			or uri.lower().endswith('.gif')
-			or uri.lower().endswith('.svg')
-		):
+			uri_ext(uri) in ['.jpg', '.jpeg', '.png', '.gif', '.svg']
+			or mimetype(uri).startswith('image/')):
 		_sp.Popen(['tmux', 'split-window', '-h', "tiv -r 0.4 -h 52 -p %s" % uri]);
 		return;
-	if uri.lower().endswith('.maff'):
+	# Open mozilla archive file
+	if uri_ext(uri) == '.maff':
 		urilist = maffurl(uri);
 		assert len(urilist) < 2;
 		if len(urilist):
 			_sp.Popen(['tmux', 'split-window', '-h', "w3m '%s'" % urilist[0]]);
 		return;
-	if uri.lower().endswith('.log'):
+	# Open log file
+	if uri_ext(uri) == '.log':
 		_sp.Popen(['tmux', 'split-window', '-h', "vim '%s'" % uri]);
 		return;
+	# Less file
 	_sp.Popen(['tmux', 'split-window', '-h', "less '%s'" % uri]);
 	return;
 
@@ -83,17 +130,21 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser();
 	parser.add_argument('-l', '--level');
 	parser.add_argument('uri');
+	parser.add_argument('-d', '--direct', help='Direct access URL without querying linkhub.',
+			action='store_true')
 	args = parser.parse_args();
 	
 	level = args.level;
-	uri = normalize(args.uri);
+	uri = normalize(args.uri, args.direct);
+	uri = readlink(uri)
 
 	if level == None:
 		level = 'xwin';
 	if level == 'xwin' and not HASXWIN:
 		level = 'term';
+
 	if level == 'xwin':
-		_sp.Popen([CMD_XOPEN, uri]);
+		xwin_open(uri);
 	elif level == 'term' or level == 'text':
 		tmux_open(uri, level == 'text');
 	elif level == 'redir':

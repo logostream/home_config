@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=topen
+GenericName=topen
+Comment=topen
+Exec=topen -l xwin -d %f
+Terminal=false
+Type=Application
+StartupNotify=true
+Icon=accessories-text-editor

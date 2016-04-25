@@ -14,3 +14,7 @@
 [remote "foo.home_config"]
 	url = ssh://foo/~/github/home_config.git
 	fetch = +refs/heads/*:refs/remotes/foo/*
+[merge]
+	tool = vimdiff
+[push]
+	default = simple
