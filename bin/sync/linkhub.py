@@ -20,8 +20,8 @@ import uuid as _uuid
 
 # TODO (style): comments
 # TODO (p2): add tag web-only, ignore for map? (no, to explain)
-# TODO (p1): case insensitive
-# TODO (p3): ? cleanup orphan files, orphan file only happens when mannual edit the file date, or uuid
+# TODO (p3): ? cleanup orphan files, orphan file only happens when mannual edit the file date, or
+#            uuid
 # TODO (p1, obsolete): comand for rename file, name are free of change now
 #+ manually for non-auto downloadable file. (mv, deplicate mode)
 #+ TODO (p1): readlink/map fall back to web option
@@ -77,15 +77,16 @@ _KEY_AUTO = 'auto'
 
 # ops
 # not suppose to be a general search tool, because one can search for linkmap file directly.
-def _find(name, url, match_mode, include_alt_urls, include_deprecated):
+def _find(name, url, match_mode, case_sensitive, include_alt_urls, include_deprecated):
+	# TODO(p1): support search for id. right now, use command `map` instead
 	assert name is not None or url is not None
 	candidates = sorted([entry for entry in _linkmap if
 				(include_deprecated or not _tagged_as(entry, _TAG_DEPRECATED))
-				and (name is None or _match(entry[_KEY_NAME], name, match_mode))
-				and (url is None or _match(entry[_KEY_URL], url, match_mode)
+				and (name is None or _match(entry[_KEY_NAME], name, match_mode, case_sensitive))
+				and (url is None or _match(entry[_KEY_URL], url, match_mode, case_sensitive)
 					or (include_alt_urls
 						and _KEY_ALT_URLS in entry
-						and _match_any(entry[_KEY_ALT_URLS], url, match_mode)))],
+						and _match_any(entry[_KEY_ALT_URLS], url, match_mode, case_sensitive)))],
 			key=_get_date, reverse=True)
 
 	_info('Matched entries:')
@@ -151,7 +152,7 @@ def _map_to_local(uuid=None, name=None, url=None, check=False):
 	return 0
 
 def _make_link(uuid, name, url, dest_path):
-	# TODO (p1): support dest_dir
+	# TODO (p1): support dest_dir, using default name
 	candidate = _map_to_candidates(_linkmap, _linkmap_table, uuid, name, url)[0]
 	_info('Make link for entry:')
 	_print_entry(sys.stderr, candidate)
@@ -170,7 +171,7 @@ def _read_link(link_path, check):
 		return _map_to_local(uuid=uuid, check=check)
 
 def _make_copy(uuid, name, url, dest_path):
-	# TODO (p1): support dest_dir
+	# TODO (p1): support dest_dir, using default name
 	candidate = _map_to_candidates(_linkmap, _linkmap_table, uuid, name, url)[0]
 	_info('Make copy for entry:')
 	_print_entry(sys.stderr, candidate)
@@ -560,19 +561,21 @@ def _name_from_url(url):
 	_info('Sanitized name: %s.', name)
 	return name
 
-def _match(text, keyword, match_mode):
+def _match(text, keyword, match_mode, case_sensitive):
+	# TODO (p3): _match used for any commands with --name
 	if match_mode == _MODE_EQUALS:
-		return text == keyword
+		return text == keyword if case_sensitive else text.lower() == keyword.lower()
 	if match_mode == _MODE_CONTAINS:
-		return text.find(keyword) >= 0
+		return (text.find(keyword) >= 0 if case_sensitive
+				else text.lower().find(keyword.lower()) >= 0)
 	if match_mode == _MODE_REGEX:
-		return re.search(keyword, text)
+		return re.search(keyword, text, 0 if case_sensitive else re.IGNORECASE)
 	_error('Not a valid match_mode: %s.', match_mode)
 	assert False
 
-def _match_any(text_list, keyword, match_mode):
+def _match_any(text_list, keyword, match_mode, case_sensitive):
 	for text in text_list:
-		if _match(text, keyword, match_mode):
+		if _match(text, keyword, match_mode, case_sensitive):
 			return True
 	return False
 
@@ -658,6 +661,8 @@ if __name__ == '__main__':
 	parser_find.add_argument('-u', '--url', help='url')
 	parser_find.add_argument('-m', '--match_mode', default=_MODE_CONTAINS,
 			help='Search mode: match regex, whole string, substring (default).')
+	parser_find.add_argument('-c', '--case_sensitive', action='store_true',
+			help='Enable case sensitive in search (case insensitive by default).')
 	parser_find.add_argument('-U', '--include_alt_urls', action='store_true',
 			help='Include alt_urls as the url query search for, used with -u.')
 	parser_find.add_argument('-d', '--include_deprecated', action='store_true',
@@ -715,7 +720,6 @@ if __name__ == '__main__':
 
 	# deprecate
 	parser_deprecate = subparsers.add_parser('gc', help='Deprecates duplicated entries.')
-	# TODO (p1): case insensitive
 	parser_deprecate.add_argument('-k', '--name', help='name')
 	parser_deprecate.add_argument('-u', '--url', help='url')
 	parser_deprecate.set_defaults(action='gc'); # action=deprecate
@@ -736,7 +740,7 @@ if __name__ == '__main__':
 		if args.include_alt_urls and args.url is None:
 			_warn('Ignores --include_alt_urls when --url not specified.')
 		exit_code = _find(
-				args.name, args.url, args.match_mode,
+				args.name, args.url, args.match_mode, args.case_sensitive,
 				args.include_alt_urls, args.include_deprecated)
 	elif args.action == 'load':
 		# import

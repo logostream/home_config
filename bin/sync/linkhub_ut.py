@@ -649,38 +649,67 @@ class _LinkhubTests(_ut.TestCase):
 
 	# test _match()
 	def test_match_equals(self):
-		self.assertTrue(_lhub._match('abcabc', 'abcabc', _lhub._MODE_EQUALS))
-		self.assertFalse(_lhub._match('abcabc', 'abc', _lhub._MODE_EQUALS))
-		self.assertFalse(_lhub._match('abcabc', 'abc.', _lhub._MODE_EQUALS))
-		self.assertFalse(_lhub._match('abcabc', 'abcd', _lhub._MODE_EQUALS))
+		self.assertTrue(_lhub._match('abcabc', 'abcabc', _lhub._MODE_EQUALS, case_sensitive=True))
+		self.assertFalse(_lhub._match('abcabc', 'abc', _lhub._MODE_EQUALS, case_sensitive=True))
+		self.assertFalse(_lhub._match('abcabc', 'abc.', _lhub._MODE_EQUALS, case_sensitive=True))
+		self.assertFalse(_lhub._match('abcabc', 'abcd', _lhub._MODE_EQUALS, case_sensitive=True))
 		return
 
 	def test_match_contains(self):
-		self.assertTrue(_lhub._match('abcabc', 'abcabc', _lhub._MODE_CONTAINS))
-		self.assertTrue(_lhub._match('abcabc', 'abc', _lhub._MODE_CONTAINS))
-		self.assertFalse(_lhub._match('abcabc', 'abc.', _lhub._MODE_CONTAINS))
-		self.assertFalse(_lhub._match('abcabc', 'abcd', _lhub._MODE_CONTAINS))
+		self.assertTrue(_lhub._match('abcabc', 'abcabc', _lhub._MODE_CONTAINS, case_sensitive=True))
+		self.assertTrue(_lhub._match('abcabc', 'abc', _lhub._MODE_CONTAINS, case_sensitive=True))
+		self.assertFalse(_lhub._match('abcabc', 'abc.', _lhub._MODE_CONTAINS, case_sensitive=True))
+		self.assertFalse(_lhub._match('abcabc', 'abcd', _lhub._MODE_CONTAINS, case_sensitive=True))
 		return
 
 	def test_match_regex(self):
-		self.assertTrue(_lhub._match('abcabc', 'abcabc', _lhub._MODE_REGEX))
-		self.assertTrue(_lhub._match('abcabc', 'abc', _lhub._MODE_REGEX))
-		self.assertTrue(_lhub._match('abcabc', '.ca.', _lhub._MODE_REGEX))
-		self.assertFalse(_lhub._match('abcabc', 'abcd', _lhub._MODE_REGEX))
+		self.assertTrue(_lhub._match('abcabc', 'abcabc', _lhub._MODE_REGEX, case_sensitive=True))
+		self.assertTrue(_lhub._match('abcabc', 'abc', _lhub._MODE_REGEX, case_sensitive=True))
+		self.assertTrue(_lhub._match('abcabc', '.ca.', _lhub._MODE_REGEX, case_sensitive=True))
+		self.assertFalse(_lhub._match('abcabc', 'abcd', _lhub._MODE_REGEX, case_sensitive=True))
+		return
+
+	def test_match_equals_case_sensitive(self):
+		self.assertTrue(_lhub._match('ABc', 'abC', _lhub._MODE_EQUALS, case_sensitive=False))
+		self.assertFalse(_lhub._match('ABc', 'abC', _lhub._MODE_EQUALS, case_sensitive=True))
+		return
+
+	def test_match_contains_case_sensitive(self):
+		self.assertTrue(_lhub._match('ABc', 'abC', _lhub._MODE_CONTAINS, case_sensitive=False))
+		self.assertFalse(_lhub._match('ABc', 'abC', _lhub._MODE_CONTAINS, case_sensitive=True))
+		return
+
+	def test_match_regex_case_sensitive(self):
+		self.assertTrue(_lhub._match('ABc', 'abC', _lhub._MODE_REGEX, case_sensitive=False))
+		self.assertFalse(_lhub._match('ABc', 'abC', _lhub._MODE_REGEX, case_sensitive=True))
 		return
 
 
 	# test _match_any()
 	def test_match_any(self):
-		self.assertTrue(_lhub._match_any(['a', 'b', 'c'], 'a', _lhub._MODE_EQUALS))
-		self.assertFalse(_lhub._match_any(['a', 'b', 'c'], 'd', _lhub._MODE_EQUALS))
+		self.assertTrue(_lhub._match_any(['a', 'b', 'c'], 'a', _lhub._MODE_EQUALS,
+					case_sensitive=True))
+		self.assertFalse(_lhub._match_any(['a', 'b', 'c'], 'd', _lhub._MODE_EQUALS,
+					case_sensitive=True))
 
-		self.assertTrue(_lhub._match_any(['aa', 'bb', 'cc'], 'b', _lhub._MODE_CONTAINS))
-		self.assertFalse(_lhub._match_any(['aa', 'bb', 'cc'], 'd', _lhub._MODE_CONTAINS))
+		self.assertTrue(_lhub._match_any(['aa', 'bb', 'cc'], 'b', _lhub._MODE_CONTAINS,
+					case_sensitive=True))
+		self.assertFalse(_lhub._match_any(['aa', 'bb', 'cc'], 'd', _lhub._MODE_CONTAINS,
+					case_sensitive=True))
 
-		self.assertTrue(_lhub._match_any(['aa', 'bb', 'cc'], '[cd]', _lhub._MODE_REGEX))
-		self.assertFalse(_lhub._match_any(['aa', 'bb', 'cc'], '[ed]', _lhub._MODE_REGEX))
+		self.assertTrue(_lhub._match_any(['aa', 'bb', 'cc'], '[cd]', _lhub._MODE_REGEX,
+					case_sensitive=True))
+		self.assertFalse(_lhub._match_any(['aa', 'bb', 'cc'], '[ed]', _lhub._MODE_REGEX,
+					case_sensitive=True))
 		return
+
+	def test_match_any_case_sensitive(self):
+		self.assertTrue(_lhub._match_any(['a', 'b', 'c'], 'A', _lhub._MODE_EQUALS,
+					case_sensitive=False))
+		self.assertFalse(_lhub._match_any(['a', 'b', 'c'], 'A', _lhub._MODE_EQUALS,
+					case_sensitive=True))
+		self.assertFalse(_lhub._match_any(['a', 'b', 'c'], 'D', _lhub._MODE_EQUALS,
+					case_sensitive=False))
 
 
 	# test _duplicated_keys()
@@ -785,7 +814,41 @@ class _LinkhubTests(_ut.TestCase):
 		]
 		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
-		_lhub._find('a', None, _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=False)
+		_lhub._find('a', None, _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=False,
+				include_deprecated=False)
+
+		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
+		return
+
+	@patch('linkhub._print_entry')
+	def test_find_name_case_sensitive(self, print_entry_mock):
+		matched = [
+			{'name' : 'abc', 'date' : _dt.date(2012, 1, 1)},
+		]
+		unmatched = [
+			{'name' : 'ABC'}, {'name' : 'EFG'}
+		]
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
+
+		_lhub._find('a', None, _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=False,
+				include_deprecated=False)
+
+		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
+		return
+
+	@patch('linkhub._print_entry')
+	def test_find_name_case_insensitive(self, print_entry_mock):
+		matched = [
+			{'name' : 'abc', 'date' : _dt.date(2012, 1, 2)},
+			{'name' : 'ABC', 'date' : _dt.date(2012, 1, 1)},
+		]
+		unmatched = [
+			{'name' : 'EFG'}
+		]
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
+
+		_lhub._find('a', None, _lhub._MODE_CONTAINS, case_sensitive=False, include_alt_urls=False,
+				include_deprecated=False)
 
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
@@ -802,7 +865,41 @@ class _LinkhubTests(_ut.TestCase):
 		]
 		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
-		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=False)
+		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=False,
+				include_deprecated=False)
+
+		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
+		return
+
+	@patch('linkhub._print_entry')
+	def test_find_url_case_sensitive(self, print_entry_mock):
+		matched = [
+			{'url' : 'abc', 'date' : _dt.date(2012, 1, 1)},
+		]
+		unmatched = [
+			{'url' : 'ABC'}, {'url' : 'EFG'}
+		]
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
+
+		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=False,
+				include_deprecated=False)
+
+		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
+		return
+
+	@patch('linkhub._print_entry')
+	def test_find_url_case_insensitive(self, print_entry_mock):
+		matched = [
+			{'url' : 'abc', 'date' : _dt.date(2012, 1, 2)},
+			{'url' : 'ABC', 'date' : _dt.date(2012, 1, 1)},
+		]
+		unmatched = [
+			{'url' : 'EFG'}
+		]
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
+
+		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, case_sensitive=False, include_alt_urls=False,
+				include_deprecated=False)
 
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
@@ -819,7 +916,8 @@ class _LinkhubTests(_ut.TestCase):
 		]
 		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
-		_lhub._find('a', 'b', _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=False)
+		_lhub._find('a', 'b', _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=False,
+				include_deprecated=False)
 
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
@@ -835,7 +933,42 @@ class _LinkhubTests(_ut.TestCase):
 		]
 		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
-		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, include_alt_urls=True, include_deprecated=False)
+		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=True,
+				include_deprecated=False)
+
+		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
+		return
+
+	@patch('linkhub._print_entry')
+	def test_find_alt_urls_case_sensitive(self, print_entry_mock):
+		matched = [
+			{'url' : 'cd', 'alt_urls' : ['ab'], 'date' : _dt.date(2012, 1, 2)},
+		]
+		unmatched = [
+			{'url' : 'cd', 'alt_urls' : ['AB']},
+			{'url' : 'cd', 'alt_urls' : ['EF']},
+		]
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
+
+		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=True,
+				include_deprecated=False)
+
+		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
+		return
+
+	@patch('linkhub._print_entry')
+	def test_find_alt_urls_case_insensitive(self, print_entry_mock):
+		matched = [
+			{'url' : 'cd', 'alt_urls' : ['ab'], 'date' : _dt.date(2012, 1, 2)},
+			{'url' : 'cd', 'alt_urls' : ['AB'], 'date' : _dt.date(2012, 1, 1)},
+		]
+		unmatched = [
+			{'url' : 'cd', 'alt_urls' : ['EF']},
+		]
+		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
+
+		_lhub._find(None, 'a', _lhub._MODE_CONTAINS, case_sensitive=False, include_alt_urls=True,
+				include_deprecated=False)
 
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
@@ -853,7 +986,8 @@ class _LinkhubTests(_ut.TestCase):
 		]
 		self._load_context(linkmap=(matched + unmatched), load_linkmap_table=False)
 
-		_lhub._find('a', 'b', _lhub._MODE_CONTAINS, include_alt_urls=True, include_deprecated=False)
+		_lhub._find('a', 'b', _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=True,
+				include_deprecated=False)
 
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 		return
@@ -873,12 +1007,14 @@ class _LinkhubTests(_ut.TestCase):
 		]
 		self._load_context(linkmap=(matched + deprecated + unmatched), load_linkmap_table=False)
 
-		_lhub._find('a', None, _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=False)
+		_lhub._find('a', None, _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=False,
+				include_deprecated=False)
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, matched)
 
 		print_entry_mock.reset_mock()
 
-		_lhub._find('a', None, _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=True)
+		_lhub._find('a', None, _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=False,
+				include_deprecated=True)
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, deprecated + matched)
 		return
 
@@ -896,7 +1032,8 @@ class _LinkhubTests(_ut.TestCase):
 		]
 		self._load_context(linkmap=(matched), load_linkmap_table=False)
 
-		_lhub._find('a', None, _lhub._MODE_CONTAINS, include_alt_urls=False, include_deprecated=True)
+		_lhub._find('a', None, _lhub._MODE_CONTAINS, case_sensitive=True, include_alt_urls=False,
+				include_deprecated=True)
 
 		self._verify_print_entry_outputs(print_entry_mock, sys.stdout, expected)
 		return
