@@ -38,7 +38,6 @@ set laststatus=2
 " Highlight current line
 set cursorline
 set colorcolumn=100
-"set cursorcolumn
 "let g:Powerline_symbols = 'fancy'
 "let g:Powerline_theme = 'solarized256'
 let g:NERDTreeHijackNetrw = 0
@@ -228,5 +227,11 @@ endfunction
 com! -nargs=0 FoldFilter :set foldmethod=expr|set foldexpr=join(getline(max([0,v:lnum-5]),v:lnum+5))!~@/|normal zm
 cnoreabbrev ff FoldFilter
 nnoremap <Leader>ff :FoldFilter<CR>
+
+" Highlight column
+com! -nargs=0 CursorColumn :set cursorline cursorcolumn
+cnoreabbrev cc CursorColumn
+nnoremap <Leader>cc :CursorColumn<CR>
+
 com! -range=% -nargs=1 PySubs <line1>,<line2>call s:python_substitute_global("<args>")
 cnoreabbrev pys PySubs
