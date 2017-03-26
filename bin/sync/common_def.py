@@ -76,8 +76,8 @@ class LogEntry:
 		level_name = self.leveltab[self.level];
 		detail_info = json.dumps(self.details, ensure_ascii=False); # make chinese char more readable
 		#detail_info = re.sub('"(\\w+)"\\s*:', '\\1:', detail_info);
-		# print detail_info;
-		return u'%-8s%-32s%s' % (level_name, self.op_name, detail_info);
+		#print detail_info;
+		return u'%-8s%-32s%s' % (level_name, self.op_name, detail_info.decode('utf-8'));
 	
 	@classmethod
 	def decode(cls, logline):
